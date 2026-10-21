@@ -1,47 +1,57 @@
 import type { AuditRow } from "@/db/audit";
-import { formatTime, Section } from "@/ui/Layout";
+import { Empty, formatTime, link, PageTitle, Section } from "@/ui/Layout";
 
 type Props = { entries: AuditRow[] };
 
+const th = "px-4 py-3 text-sm font-bold uppercase";
+
 export const Audit = ({ entries }: Props) => (
-  <Section title="Audit log for repositories you administer">
-    {entries.length === 0 ? (
-      <p class="text-sm text-stone-500">No entries.</p>
-    ) : (
-      <div class="overflow-x-auto rounded-lg border border-stone-200 bg-white">
-        <table class="w-full text-left text-sm">
-          <thead class="border-b border-stone-200 text-stone-500">
-            <tr>
-              <th class="px-3 py-2 font-medium">Time (UTC)</th>
-              <th class="px-3 py-2 font-medium">Actor</th>
-              <th class="px-3 py-2 font-medium">Action</th>
-              <th class="px-3 py-2 font-medium">Repository</th>
-              <th class="px-3 py-2 font-medium">Details</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-stone-100">
-            {entries.map((entry) => (
+  <>
+    <PageTitle
+      title="Audit log"
+      subtitle="Every webhook, vote and change on the repositories you administer."
+    />
+    <Section title="Latest entries" tone="caramel">
+      {entries.length === 0 ? (
+        <Empty>No entries.</Empty>
+      ) : (
+        <div class="overflow-x-auto border-3 border-black bg-cream">
+          <table class="w-full text-left">
+            <thead class="border-b-3 border-black bg-milk">
               <tr>
-                <td class="whitespace-nowrap px-3 py-2">{formatTime(entry.at)}</td>
-                <td class="px-3 py-2">{entry.actor_login ? `@${entry.actor_login}` : "github"}</td>
-                <td class="px-3 py-2 font-mono">{entry.action}</td>
-                <td class="px-3 py-2">
-                  {entry.request_id ? (
-                    <a href={`/requests/${entry.request_id}`} class="underline">
-                      {entry.repo_full_name}
-                    </a>
-                  ) : (
-                    entry.repo_full_name
-                  )}
-                </td>
-                <td class="break-all px-3 py-2 font-mono text-xs text-stone-500">
-                  {entry.details_json}
-                </td>
+                <th class={th}>Time (UTC)</th>
+                <th class={th}>Actor</th>
+                <th class={th}>Action</th>
+                <th class={th}>Repository</th>
+                <th class={th}>Details</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    )}
-  </Section>
+            </thead>
+            <tbody class="divide-y divide-black/25">
+              {entries.map((entry) => (
+                <tr class="align-top transition-colors hover:bg-milk">
+                  <td class="whitespace-nowrap px-4 py-3">{formatTime(entry.at)}</td>
+                  <td class="px-4 py-3 font-bold">
+                    {entry.actor_login ? `@${entry.actor_login}` : "github"}
+                  </td>
+                  <td class="whitespace-nowrap px-4 py-3 font-mono text-sm">{entry.action}</td>
+                  <td class="px-4 py-3">
+                    {entry.request_id ? (
+                      <a href={`/requests/${entry.request_id}`} class={link}>
+                        {entry.repo_full_name}
+                      </a>
+                    ) : (
+                      entry.repo_full_name
+                    )}
+                  </td>
+                  <td class="break-all px-4 py-3 font-mono text-xs text-grey-700">
+                    {entry.details_json}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </Section>
+  </>
 );

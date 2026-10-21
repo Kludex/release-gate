@@ -188,6 +188,12 @@ importers:
       '@cloudflare/workers-types':
         specifier: 5.20261019.1
         version: 5.20261019.1
+      '@fontsource-variable/jetbrains-mono':
+        specifier: 5.3.0
+        version: 5.3.0
+      '@fontsource-variable/onest':
+        specifier: 5.3.1
+        version: 5.3.1
       '@simplewebauthn/browser':
         specifier: 14.0.0
         version: 14.0.0
@@ -552,6 +558,12 @@ packages:
     engines: {node: '>=18'}
     cpu: [x64]
     os: [win32]
+
+  '@fontsource-variable/jetbrains-mono@5.3.0':
+    resolution: {integrity: sha512-F32xpS2NsGYoQi2ADSkKTgpJj7ozajsGgDJ8woTnqjmIB+dxDIqImjl4pXZVEExu8UFZ2ndhmX18EBS/hdz3Lw==}
+
+  '@fontsource-variable/onest@5.3.1':
+    resolution: {integrity: sha512-xaaw6G4HDB2/RczsWLD/2bnib4ykmQlTlBUN3GOEOiyErilZukQWVJG95h9zwAy0i8KY+QzDa+COPfqhI72Acw==}
 
   '@hexagon/base64@1.1.28':
     resolution: {integrity: sha512-lhqDEAvWixy3bZ+UOYbPwUbBkwBq5C1LAJ/xPC8Oi+lL54oyakv/npbA0aU2hgCsx/1NUd4IBvV03+aUBWxerw==}
@@ -2163,6 +2175,10 @@ snapshots:
 
   '@esbuild/win32-x64@0.28.2':
     optional: true
+
+  '@fontsource-variable/jetbrains-mono@5.3.0': {}
+
+  '@fontsource-variable/onest@5.3.1': {}
 
   '@hexagon/base64@1.1.28': {}
 

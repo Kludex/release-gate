@@ -100,7 +100,7 @@ it("refuses requests for another host", async () => {
 it("sets security headers on every response", async () => {
   const response = await call("/");
   expect(response.headers.get("Content-Security-Policy")).toBe(
-    "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'",
+    "default-src 'none'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self'; connect-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'",
   );
   expect(response.headers.get("X-Frame-Options")).toBe("DENY");
   expect(response.headers.get("Referrer-Policy")).toBe("no-referrer");

@@ -20,7 +20,7 @@ passkeys.get("/passkeys", async (c) => {
   const user = c.get("user");
   if (!user) return c.redirect("/");
   return c.html(
-    <Layout title="Passkeys" user={user}>
+    <Layout title="Passkeys" user={user} page="passkeys">
       <Passkeys credentials={await listCredentials(c.env.DB, user.id)} />
     </Layout>,
   );

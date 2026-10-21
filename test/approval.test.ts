@@ -54,6 +54,8 @@ it("rejects through the callback", async () => {
   expect(github.callbacks()).toEqual([
     { environment_name: "pypi", state: "rejected", comment: "Rejected by @admin via passkey" },
   ]);
+  const page = await (await call(`/requests/${id}`, { cookie: admin.cookie })).text();
+  expect(page).toMatch(/bg-red[^"]*">reject</);
 });
 
 describe("challenge validation", () => {
@@ -185,6 +187,8 @@ describe("approvers", () => {
     const id = await pendingRequest();
     await vote(admin, id, "approve");
     expect(github.callbacks()).toEqual([]);
+    const page = await (await call(`/requests/${id}`, { cookie: alice.cookie })).text();
+    expect(page).toContain("1 of 2 approvals");
     expect(await latestRequest()).toMatchObject({ status: "pending" });
     await vote(alice, id, "approve");
     expect(github.callbacks()).toEqual([

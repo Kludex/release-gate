@@ -1,1 +1,81 @@
 @import "tailwindcss";
+
+@font-face {
+  font-family: "Onest";
+  src: url("/fonts/onest.woff2") format("woff2");
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "JetBrains Mono";
+  src: url("/fonts/jetbrains-mono.woff2") format("woff2");
+  font-weight: 100 800;
+  font-display: swap;
+}
+
+/* The Python Italia style guide palette. */
+@theme {
+  --font-sans: "Onest", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  --color-*: initial;
+  --color-black: #0e1116;
+  --color-milk: #faf5f3;
+  --color-cream: #fce8de;
+  --color-caramel: #ead6ce;
+  --color-coral: #f17a5d;
+  --color-yellow: #f8b03d;
+  --color-green: #34b4a1;
+  --color-purple: #9473b0;
+  --color-pink: #dd9bc7;
+  --color-blue: #79cde0;
+  --color-red: #d75353;
+  --color-grey-700: #494a4d;
+  --color-grey-100: #e2dedd;
+
+  --animate-stripes: stripes 0.6s linear infinite;
+
+  @keyframes stripes {
+    to {
+      background-position: 28.2843px 0;
+    }
+  }
+}
+
+@layer base {
+  html {
+    @apply bg-milk text-black antialiased;
+    scrollbar-color: var(--color-black) var(--color-caramel);
+    caret-color: var(--color-purple);
+  }
+
+  ::selection {
+    @apply bg-yellow text-black;
+  }
+
+  :focus-visible {
+    outline: 3px solid var(--color-purple);
+    outline-offset: 3px;
+  }
+
+  td,
+  dd,
+  time {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@utility busy-stripes {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    var(--color-yellow) 0 10px,
+    var(--color-cream) 10px 20px
+  );
+  background-size: 28.2843px 28.2843px;
+  animation: var(--animate-stripes);
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}

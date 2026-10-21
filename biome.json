@@ -1,8 +1,9 @@
 {
   "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
   "vcs": { "enabled": true, "clientKind": "git", "useIgnoreFile": true },
-  "files": { "includes": ["**", "!public", "!pnpm-lock.yaml"] },
+  "files": { "includes": ["**", "!public", "!pnpm-lock.yaml", "!.claude"] },
   "formatter": { "indentStyle": "space", "indentWidth": 2, "lineWidth": 100 },
+  "css": { "parser": { "tailwindDirectives": true } },
   "javascript": { "formatter": { "quoteStyle": "double", "semicolons": "always" } },
   "linter": {
     "rules": {

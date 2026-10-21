@@ -39,14 +39,18 @@ document.addEventListener("submit", async (event) => {
   event.preventDefault();
   const output = form.querySelector<HTMLElement>("[data-output]");
   const button = form.querySelector<HTMLButtonElement>("button[type=submit]");
+  const show = (state: "busy" | "done" | "error", message: string) => {
+    form.dataset.state = state;
+    if (output) output.textContent = message;
+  };
   if (button) button.disabled = true;
-  if (output) output.textContent = "Waiting for your passkey…";
+  show("busy", "Waiting for your passkey…");
   try {
     const result = await submit(form);
     if (result.redirect) window.location.assign(result.redirect);
-    else if (output) output.textContent = result.message ?? "Done.";
+    else show("done", result.message ?? "Done.");
   } catch (error) {
-    if (output) output.textContent = error instanceof Error ? error.message : String(error);
+    show("error", error instanceof Error ? error.message : String(error));
   } finally {
     if (button) button.disabled = false;
   }

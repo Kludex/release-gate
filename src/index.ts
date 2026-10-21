@@ -18,6 +18,7 @@ app.use(
       defaultSrc: ["'none'"],
       scriptSrc: ["'self'"],
       styleSrc: ["'self'"],
+      fontSrc: ["'self'"],
       imgSrc: ["'self'"],
       connectSrc: ["'self'"],
       formAction: ["'self'"],

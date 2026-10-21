@@ -1,55 +1,47 @@
 import type { Invite } from "@/db/enrollment";
 import type { Approver, RepoPolicy } from "@/db/repos";
-import { Card, formatTime, Section } from "@/ui/Layout";
-import { inputClass, PasskeyForm } from "@/ui/PasskeyForm";
+import { Card, formatTime, PageTitle, rows, Section, Tag } from "@/ui/Layout";
+import { Checkbox, Field, inputClass, PasskeyForm, Select } from "@/ui/PasskeyForm";
 
 type Props = { repo: string; policy: RepoPolicy; approvers: Approver[]; invites: Invite[] };
-
-const Checkbox = ({ name, checked, label }: { name: string; checked: number; label: string }) => (
-  <label class="flex items-center gap-2 text-sm">
-    <input type="checkbox" name={name} value="1" checked={checked === 1} />
-    {label}
-  </label>
-);
 
 export const Admin = ({ repo, policy, approvers, invites }: Props) => {
   const challenge = `/admin/${repo}/challenge`;
   return (
     <>
-      <h1 class="text-xl font-semibold">{repo}</h1>
+      <PageTitle
+        title={repo}
+        subtitle="Who can approve releases, and what they must check. Every change asks for your passkey."
+      />
       <Section title="Policy">
         <Card>
           <PasskeyForm action={`/admin/${repo}/policy`} challenge={challenge} label="Save policy">
-            <label class="block space-y-1 text-sm">
-              <span>Minimum approvals</span>
+            <Field label="Minimum approvals">
               <input
                 type="number"
                 name="min_approvals"
                 min={1}
                 max={10}
                 value={String(policy.min_approvals)}
-                class={inputClass}
+                class={`${inputClass} max-w-32`}
               />
-            </label>
-            <Checkbox
-              name="prevent_self_review"
-              checked={policy.prevent_self_review}
-              label="Prevent self-review: whoever started the deployment cannot approve it"
-            />
-            <Checkbox
-              name="require_default_branch"
-              checked={policy.require_default_branch}
-              label="Require the tagged commit to be on the default branch"
-            />
+            </Field>
+            <Checkbox name="prevent_self_review" checked={policy.prevent_self_review === 1}>
+              <strong>Prevent self-review.</strong> Whoever started the deployment cannot approve
+              it.
+            </Checkbox>
+            <Checkbox name="require_default_branch" checked={policy.require_default_branch === 1}>
+              <strong>Require the default branch.</strong> The tagged commit must be on it.
+            </Checkbox>
           </PasskeyForm>
         </Card>
       </Section>
-      <Section title="Approvers">
-        <ul class="divide-y divide-stone-200 rounded-lg border border-stone-200 bg-white text-sm">
+      <Section title="Approvers" tone="caramel">
+        <ul class={rows}>
           {approvers.map((approver) => (
-            <li class="flex items-center gap-3 px-4 py-3">
-              <span class="font-medium">@{approver.login}</span>
-              <span class="text-stone-500">{approver.role}</span>
+            <li class="flex flex-wrap items-center gap-4 px-5 py-4">
+              <span class="text-xl font-bold">@{approver.login}</span>
+              <Tag color={approver.role === "admin" ? "purple" : "milk"}>{approver.role}</Tag>
               <div class="ml-auto">
                 <PasskeyForm
                   action={`/admin/${repo}/approvers/remove`}
@@ -57,6 +49,7 @@ export const Admin = ({ repo, policy, approvers, invites }: Props) => {
                   fields={{ user_id: String(approver.github_user_id) }}
                   label="Remove"
                   tone="danger"
+                  small
                 />
               </div>
             </li>
@@ -70,28 +63,30 @@ export const Admin = ({ repo, policy, approvers, invites }: Props) => {
             challenge={challenge}
             label="Create invite"
           >
-            <label class="block space-y-1 text-sm">
-              <span>GitHub login</span>
-              <input name="login" required class={inputClass} />
-            </label>
-            <label class="block space-y-1 text-sm">
-              <span>Role</span>
-              <select name="role" class={inputClass}>
-                <option value="approver">approver</option>
-                <option value="admin">admin</option>
-              </select>
-            </label>
+            <div class="grid gap-8 md:grid-cols-2">
+              <Field label="GitHub login">
+                <input name="login" required class={inputClass} placeholder="octocat" />
+              </Field>
+              <Field label="Role">
+                <Select name="role" options={["approver", "admin"]} />
+              </Field>
+            </div>
           </PasskeyForm>
-          {invites.length > 0 && (
-            <ul class="mt-4 space-y-1 text-sm text-stone-600">
-              {invites.map((invite) => (
-                <li>
-                  @{invite.github_login} ({invite.role}) - expires {formatTime(invite.expires_at)}
-                </li>
-              ))}
-            </ul>
-          )}
         </Card>
+        {invites.length > 0 && (
+          <ul class={rows}>
+            {invites.map((invite) => (
+              <li class="flex flex-wrap items-center gap-x-4 gap-y-1 px-5 py-4 text-lg">
+                <strong>
+                  @{invite.github_login} ({invite.role})
+                </strong>
+                <span class="text-base text-grey-700 sm:ml-auto">
+                  expires <time>{formatTime(invite.expires_at)} UTC</time>
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
       </Section>
     </>
   );

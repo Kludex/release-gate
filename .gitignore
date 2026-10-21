@@ -4,3 +4,5 @@ coverage/
 .dev.vars
 public/app.css
 public/app.js
+public/fonts/
+.impeccable/

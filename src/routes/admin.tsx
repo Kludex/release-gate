@@ -35,7 +35,7 @@ admin.get("/audit", async (c) => {
   if (!user) return c.redirect("/");
   const entries = await listAudit(c.env.DB, await listAdminRepos(c.env.DB, user.id));
   return c.html(
-    <Layout title="Audit log" user={user}>
+    <Layout title="Audit log" user={user} page="audit">
       <Audit entries={entries} />
     </Layout>,
   );

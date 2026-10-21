@@ -19,7 +19,7 @@ import { currentUser, fail, jsonBody } from "@/http";
 import { voteViolation } from "@/policy";
 import { Layout } from "@/ui/Layout";
 import { RequestDetail } from "@/ui/RequestDetail";
-import { RequestList, SignIn } from "@/ui/RequestList";
+import { displayRef, RequestList, SignIn } from "@/ui/RequestList";
 
 export const requests = new Hono<AppEnv>();
 
@@ -38,8 +38,8 @@ requests.get("/", async (c) => {
     listAdminRepos(c.env.DB, user.id),
   ]);
   return c.html(
-    <Layout title="Requests" user={user}>
-      <RequestList open={open} recent={recent} repos={repos} />
+    <Layout title="Requests" user={user} page="requests">
+      <RequestList login={user.login} open={open} recent={recent} repos={repos} />
     </Layout>,
   );
 });
@@ -50,7 +50,11 @@ requests.get("/requests/:id", async (c) => {
   const { request, approver, policy } = await load(c.env, c.req.param("id"), user);
   const votes = await listVotes(c.env.DB, request.id);
   return c.html(
-    <Layout title={request.repo_full_name} user={user}>
+    <Layout
+      title={`${displayRef(request.ref)} · ${request.repo_full_name}`}
+      user={user}
+      page="requests"
+    >
       <RequestDetail
         request={request}
         votes={votes}
