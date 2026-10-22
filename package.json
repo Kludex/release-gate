@@ -2,7 +2,7 @@
   "name": "release-gate",
   "version": "0.0.0",
   "private": true,
-  "license": "BSD-3-Clause",
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "build": "pnpm build:fonts && pnpm build:css && pnpm build:js",

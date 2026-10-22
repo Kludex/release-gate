@@ -85,7 +85,7 @@ export const Layout = ({ title, user, page, children }: Props) => (
         </header>
         <main class="mx-auto w-full max-w-4xl flex-1 px-5 pb-24 lg:px-8">{children}</main>
         <footer class="px-5 pb-10 text-center text-base text-grey-600">
-          release-gate is open source under the BSD-3-Clause license.{" "}
+          release-gate is open source under the MIT license.{" "}
           <a href="https://github.com/Kludex/release-gate" class={`${link} text-black`}>
             Read the code
           </a>

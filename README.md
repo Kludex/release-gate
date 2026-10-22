@@ -78,4 +78,4 @@ software authenticator that produces real ES256 WebAuthn responses.
 
 ## License
 
-[BSD-3-Clause](LICENSE)
+[MIT](LICENSE)
