@@ -65,13 +65,12 @@ export const Passkeys = ({ credentials }: Props) => (
           challenge="/passkeys/challenge"
           label="Confirm with an existing passkey, then add"
         >
-          <Field label="Name">
+          <Field label="Name (optional)">
             <input
               name="name"
-              required
               maxlength={64}
               class={`${inputClass} max-w-md`}
-              placeholder="YubiKey 5C"
+              placeholder="Detected from your device"
             />
           </Field>
         </PasskeyForm>

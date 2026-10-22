@@ -260,3 +260,37 @@ describe("revoking passkeys", () => {
     });
   });
 });
+
+describe("naming passkeys from the device", () => {
+  async function addUnnamed(key: Authenticator): Promise<string> {
+    const admin = await bootstrapAdmin();
+    const response = await passkeyAction(
+      admin,
+      "/passkeys/challenge",
+      "/passkeys/register/options",
+    );
+    const { registration } = await response.json<{ registration: Ceremony }>();
+    await call("/passkeys/register/verify", {
+      cookie: admin.cookie,
+      body: {
+        challengeId: registration.challengeId,
+        response: await key.register(registration.options),
+      },
+    });
+    return (await call("/passkeys", { cookie: admin.cookie })).text();
+  }
+
+  it("uses the authenticator's AAGUID", async () => {
+    const key = await Authenticator.create();
+    key.aaguid = Uint8Array.from("fbfc3007154e4ecc8c0b6e020557d7bd".match(/../g) as string[], (b) =>
+      Number.parseInt(b, 16),
+    );
+    expect(await addUnnamed(key)).toContain(">iCloud Keychain<");
+  });
+
+  it("falls back to the transport for unknown security keys", async () => {
+    const key = await Authenticator.create();
+    key.transports = ["usb", "nfc"];
+    expect(await addUnnamed(key)).toContain(">Security key<");
+  });
+});

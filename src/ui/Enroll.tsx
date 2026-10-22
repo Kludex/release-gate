@@ -12,13 +12,12 @@ export const Enroll = ({ action, title, help }: Props) => (
           <Field label="Code">
             <input name="code" required autocomplete="off" class={`${inputClass} font-mono`} />
           </Field>
-          <Field label="Passkey name">
+          <Field label="Passkey name (optional)">
             <input
               name="name"
-              required
               maxlength={64}
               class={inputClass}
-              placeholder="MacBook Touch ID"
+              placeholder="Detected from your device"
             />
           </Field>
         </div>

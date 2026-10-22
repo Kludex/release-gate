@@ -6,6 +6,7 @@ import {
   verifyAuthenticationResponse,
   verifyRegistrationResponse,
 } from "@simplewebauthn/server";
+import { findAuthenticatorById } from "passkey-authenticator-aaguids";
 import {
   type Challenge,
   type Credential,
@@ -110,14 +111,19 @@ export async function verifyRegistration(
     requireUserVerification: true,
   }).catch((error: Error) => fail(403, `Passkey registration failed: ${error.message}`));
   if (!result.verified) fail(403, "Passkey registration failed");
-  const { credential } = result.registrationInfo;
-  const name = typeof body.name === "string" && body.name.trim() ? body.name.trim() : "Passkey";
+  const { credential, aaguid } = result.registrationInfo;
+  const transports = credential.transports ?? [];
+  const typed = typeof body.name === "string" ? body.name.trim() : "";
+  const name =
+    typed ||
+    findAuthenticatorById({ authenticatorId: aaguid })?.name ||
+    (transports.some((t) => ["usb", "nfc", "ble"].includes(t)) ? "Security key" : "Passkey");
   const save = insertCredential(env.DB, {
     credential_id: credential.id,
     github_user_id: user.id,
     public_key: credential.publicKey,
     counter: credential.counter,
-    transports: JSON.stringify(credential.transports ?? []),
+    transports: JSON.stringify(transports),
     name: name.slice(0, 64),
   });
   return { purpose: challenge.purpose, save };

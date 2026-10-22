@@ -10,6 +10,7 @@ const ATTESTED = 0x40;
 export class Authenticator {
   counter = 0;
   transports: RegistrationResponseJSON["response"]["transports"] = ["internal"];
+  aaguid = new Uint8Array(16);
 
   private constructor(
     readonly id: string,
@@ -51,7 +52,7 @@ export class Authenticator {
       await rpIdHash(),
       [UP_UV | ATTESTED],
       uint32(this.counter),
-      new Uint8Array(16),
+      this.aaguid,
       [credentialId.length >> 8, credentialId.length & 0xff],
       credentialId,
       cose,

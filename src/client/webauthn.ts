@@ -1,4 +1,4 @@
-import { startAuthentication, startRegistration } from "@simplewebauthn/browser";
+import { startAuthentication, startRegistration, WebAuthnError } from "@simplewebauthn/browser";
 
 type Ceremony = { challengeId: string; options: never };
 type Result = { error?: string; message?: string; redirect?: string; registration?: Ceremony };
@@ -50,7 +50,17 @@ document.addEventListener("submit", async (event) => {
     if (result.redirect) window.location.assign(result.redirect);
     else show("done", result.message ?? "Done.");
   } catch (error) {
-    show("error", error instanceof Error ? error.message : String(error));
+    if (
+      error instanceof WebAuthnError &&
+      error.code === "ERROR_AUTHENTICATOR_PREVIOUSLY_REGISTERED"
+    ) {
+      show(
+        "error",
+        "That device already has a passkey here. In the second prompt, pick another one.",
+      );
+    } else {
+      show("error", error instanceof Error ? error.message : String(error));
+    }
   } finally {
     if (button) button.disabled = false;
   }
