@@ -104,7 +104,8 @@ export function upsertApprover(
     .prepare(
       `INSERT INTO approvers (repo_full_name, github_user_id, login, role, added_by, created_at)
        VALUES (?, ?, ?, ?, ?, ?)
-       ON CONFLICT (repo_full_name, github_user_id) DO UPDATE SET login = excluded.login, role = excluded.role`,
+       ON CONFLICT (repo_full_name, github_user_id) DO UPDATE SET login = excluded.login,
+         role = CASE WHEN approvers.role = 'admin' THEN 'admin' ELSE excluded.role END`,
     )
     .bind(
       approver.repo_full_name,
@@ -116,14 +117,20 @@ export function upsertApprover(
     );
 }
 
+/** Removes an approver, unless they are the repository's last admin. */
 export async function removeApprover(
   db: D1Database,
   repo: string,
   userId: number,
-): Promise<boolean> {
+): Promise<"removed" | "missing" | "last-admin"> {
   const result = await db
-    .prepare("DELETE FROM approvers WHERE repo_full_name = ? AND github_user_id = ?")
-    .bind(repo, userId)
+    .prepare(
+      `DELETE FROM approvers WHERE repo_full_name = ? AND github_user_id = ?
+       AND (role != 'admin'
+         OR (SELECT COUNT(*) FROM approvers WHERE repo_full_name = ? AND role = 'admin') > 1)`,
+    )
+    .bind(repo, userId, repo)
     .run();
-  return result.meta.changes === 1;
+  if (result.meta.changes === 1) return "removed";
+  return (await getApprover(db, repo, userId)) ? "last-admin" : "missing";
 }

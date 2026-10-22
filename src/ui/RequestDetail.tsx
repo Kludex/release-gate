@@ -1,5 +1,5 @@
 import type { Child } from "hono/jsx";
-import type { Approver, RepoPolicy } from "@/db/repos";
+import type { RepoPolicy } from "@/db/repos";
 import type { ApprovalRequest, VoteRow } from "@/db/requests";
 import { formatTime, link, meta, PageTitle, Section } from "@/ui/Layout";
 import { PasskeyForm } from "@/ui/PasskeyForm";
@@ -9,9 +9,9 @@ type Props = {
   request: ApprovalRequest;
   votes: VoteRow[];
   policy: RepoPolicy;
-  approver: Approver;
   previousTag: string | null;
   approveBlocked: string | null;
+  retryable: boolean;
 };
 
 /** One dot per required approval, filled as approvals arrive. */
@@ -43,9 +43,9 @@ export const RequestDetail = ({
   request,
   votes,
   policy,
-  approver,
   previousTag,
   approveBlocked,
+  retryable,
 }: Props) => {
   const repoUrl = `https://github.com/${request.repo_full_name}`;
   const tag = displayRef(request.ref);
@@ -90,10 +90,12 @@ export const RequestDetail = ({
           </div>
         </div>
       )}
-      {request.status === "error" && approver.role === "admin" && (
+      {retryable && (
         <div class={panel}>
           <p class="max-w-[60ch] text-xl">
-            Sending the decision to GitHub failed. Send it again once GitHub is reachable.
+            {request.status === "error"
+              ? "Sending the decision to GitHub failed. Send it again once GitHub is reachable."
+              : "Sending the decision to GitHub never finished. Send it again."}
           </p>
           <PasskeyForm
             action={`/requests/${request.id}/retry-callback`}

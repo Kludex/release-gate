@@ -7,6 +7,7 @@ type Props = { repo: string; policy: RepoPolicy; approvers: Approver[]; invites:
 
 export const Admin = ({ repo, policy, approvers, invites }: Props) => {
   const challenge = `/admin/${repo}/challenge`;
+  const admins = approvers.filter((approver) => approver.role === "admin").length;
   return (
     <>
       <PageTitle
@@ -40,14 +41,18 @@ export const Admin = ({ repo, policy, approvers, invites }: Props) => {
               <span class="text-xl font-semibold">@{approver.login}</span>
               <Tag color={approver.role === "admin" ? "yellow" : "grey"}>{approver.role}</Tag>
               <div class="ml-auto">
-                <PasskeyForm
-                  action={`/admin/${repo}/approvers/remove`}
-                  challenge={challenge}
-                  fields={{ user_id: String(approver.github_user_id) }}
-                  label="Remove"
-                  tone="danger"
-                  small
-                />
+                {approver.role === "admin" && admins === 1 ? (
+                  <span class={`${meta} text-grey-600`}>last admin</span>
+                ) : (
+                  <PasskeyForm
+                    action={`/admin/${repo}/approvers/remove`}
+                    challenge={challenge}
+                    fields={{ user_id: String(approver.github_user_id) }}
+                    label="Remove"
+                    tone="danger"
+                    small
+                  />
+                )}
               </div>
             </li>
           ))}

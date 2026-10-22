@@ -56,6 +56,24 @@ export function insertCredential(
     );
 }
 
+/** Deletes one of the user's passkeys, unless it is their last one. */
+export async function deleteCredential(
+  db: D1Database,
+  userId: number,
+  id: string,
+): Promise<"deleted" | "missing" | "last"> {
+  const deleted = await db
+    .prepare(
+      `DELETE FROM credentials WHERE credential_id = ? AND github_user_id = ?
+       AND (SELECT COUNT(*) FROM credentials WHERE github_user_id = ?) > 1`,
+    )
+    .bind(id, userId, userId)
+    .run();
+  if (deleted.meta.changes === 1) return "deleted";
+  const credential = await getCredential(db, id);
+  return credential?.github_user_id === userId ? "last" : "missing";
+}
+
 export async function recordCredentialUse(
   db: D1Database,
   id: string,

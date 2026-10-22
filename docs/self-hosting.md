@@ -106,6 +106,19 @@ A repository that isn't in release-gate's policy table gets every deployment rej
 
 To add another passkey, an approver opens `/passkeys` and confirms with an existing one first.
 
+## Removing access
+
+- **A lost or stolen device:** open `/passkeys` from another device and remove its passkey. You confirm with any of
+  your other passkeys. Your last passkey can't be removed, so add a replacement first.
+- **An approver who leaves:** an admin removes them on the repository's admin page. A repository always keeps at
+  least one admin, so promote someone else before the last admin steps down. Invites never demote an admin.
+
+## Stuck callbacks
+
+If GitHub can't be reached, the request ends in `error`. If the worker dies while sending the decision, the request
+stays in `delivering`. In both cases an admin can confirm with a passkey and send the stored decision again, right
+away for `error` and after 5 minutes for `delivering`.
+
 ## Recovery
 
 If every passkey is lost, rotate the bootstrap code:

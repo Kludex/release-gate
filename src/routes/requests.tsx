@@ -4,11 +4,12 @@ import { audit } from "@/db/audit";
 import { getApprover, getPolicy, listAdminRepos, type RepoPolicy } from "@/db/repos";
 import {
   type ApprovalRequest,
+  canRetryDelivery,
   getRequest,
   insertVote,
   listRequestsForApprover,
   listVotes,
-  startDelivery,
+  restartDelivery,
   type Vote,
 } from "@/db/requests";
 import type { AppEnv, Env, User } from "@/env";
@@ -59,9 +60,9 @@ requests.get("/requests/:id", async (c) => {
         request={request}
         votes={votes}
         policy={policy}
-        approver={approver}
         previousTag={await findPreviousTag(c.env, request)}
         approveBlocked={voteViolation(policy, request, user, "approve")}
+        retryable={approver.role === "admin" && canRetryDelivery(request)}
       />
     </Layout>,
   );
@@ -126,13 +127,7 @@ requests.post("/requests/:id/retry-callback", async (c) => {
   await verifyAuthentication(c.env, user, await jsonBody(c), ["retry"], id);
   const { request, approver } = await load(c.env, id, user);
   checkRetry(request, approver.role);
-  const { decision, status_reason } = request as {
-    decision: "approved" | "rejected";
-    status_reason: string;
-  };
-  if (!(await startDelivery(c.env.DB, id, "error", decision, status_reason))) {
-    fail(409, "Another retry is already running");
-  }
+  if (!(await restartDelivery(c.env.DB, id))) fail(409, "Another retry is already running");
   await audit(c.env.DB, {
     actor: user,
     action: "callback.retry",
@@ -153,7 +148,7 @@ async function load(env: Env, id: string, user: User) {
 
 function checkRetry(request: ApprovalRequest, role: string): void {
   if (role !== "admin") fail(403, "Only admins can retry callbacks");
-  if (request.status !== "error") fail(409, "This request has no failed callback");
+  if (!canRetryDelivery(request)) fail(409, "This request has no failed or stuck callback");
 }
 
 async function findPreviousTag(env: Env, request: ApprovalRequest): Promise<string | null> {

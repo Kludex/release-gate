@@ -1,6 +1,7 @@
 import { expect, it } from "vitest";
 import { API, github, REPO, releaseRoutes, SHA } from "./github";
 import {
+  ADMIN,
   ALICE,
   addMember,
   BOB,
@@ -166,4 +167,35 @@ it.each([
   github.on("GET", `${API}/repos/${REPO}/tags?per_page=100`, tags);
   const detail = await (await call(`/requests/${id}`, { cookie: admin.cookie })).text();
   expect(detail).toContain("No previous tag found");
+});
+
+it("keeps the last admin", async () => {
+  const admin = await bootstrapAdmin();
+  const page = await (await call(`/admin/${REPO}`, { cookie: admin.cookie })).text();
+  expect(page).toContain("last admin");
+  const response = await passkeyAction(admin, ...admin_("/approvers/remove"), { user_id: "1" });
+  expect(response.status).toBe(409);
+  expect(await response.json()).toEqual({
+    error: "Add another admin before removing the last one",
+  });
+  expect((await call(`/admin/${REPO}`, { cookie: admin.cookie })).status).toBe(200);
+});
+
+it("lets an admin step down once another admin exists", async () => {
+  const admin = await bootstrapAdmin();
+  const bob = await addMember(admin, BOB, "admin");
+  const page = await (await call(`/admin/${REPO}`, { cookie: admin.cookie })).text();
+  expect(page).not.toContain("last admin");
+  const response = await passkeyAction(admin, ...admin_("/approvers/remove"), { user_id: "1" });
+  expect(response.status).toBe(200);
+  expect((await call(`/admin/${REPO}`, { cookie: admin.cookie })).status).toBe(404);
+  const left = await passkeyAction(bob, ...admin_("/approvers/remove"), { user_id: "3" });
+  expect(left.status).toBe(409);
+});
+
+it("never demotes an admin through an invite", async () => {
+  const admin = await bootstrapAdmin();
+  const bob = await addMember(admin, BOB, "admin");
+  await addMember(bob, ADMIN);
+  expect((await call(`/admin/${REPO}`, { cookie: admin.cookie })).status).toBe(200);
 });

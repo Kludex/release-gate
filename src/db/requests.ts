@@ -8,6 +8,9 @@ export type RequestStatus =
 export type Decision = "approved" | "rejected";
 export type Vote = "approve" | "reject";
 
+/** How long a delivery may run before an admin can assume its worker died and send it again. */
+export const STUCK_DELIVERY_MS = 5 * 60 * 1000;
+
 export type ApprovalRequest = {
   id: string;
   delivery_id: string;
@@ -26,11 +29,12 @@ export type ApprovalRequest = {
   status_reason: string | null;
   created_at: number;
   decided_at: number | null;
+  delivery_started_at: number;
 };
 
 export type NewRequest = Omit<
   ApprovalRequest,
-  "status" | "decision" | "status_reason" | "decided_at" | "initiator_ids"
+  "status" | "decision" | "status_reason" | "decided_at" | "initiator_ids" | "delivery_started_at"
 >;
 
 export type VoteRow = {
@@ -99,10 +103,33 @@ export async function startDelivery(
 ): Promise<boolean> {
   const result = await db
     .prepare(
-      `UPDATE approval_requests SET status = 'delivering', decision = ?, status_reason = ?
+      `UPDATE approval_requests SET status = 'delivering', decision = ?, status_reason = ?,
+         delivery_started_at = ?
        WHERE id = ? AND status = ?`,
     )
-    .bind(decision, reason, id, from)
+    .bind(decision, reason, Date.now(), id, from)
+    .run();
+  return result.meta.changes === 1;
+}
+
+/** True when the decision never reached GitHub: the callback failed, or its worker died mid-delivery. */
+export function canRetryDelivery(request: ApprovalRequest): boolean {
+  return (
+    request.status === "error" ||
+    (request.status === "delivering" &&
+      request.delivery_started_at < Date.now() - STUCK_DELIVERY_MS)
+  );
+}
+
+/** Claims a failed or stuck delivery so exactly one retry sends the stored decision again. */
+export async function restartDelivery(db: D1Database, id: string): Promise<boolean> {
+  const now = Date.now();
+  const result = await db
+    .prepare(
+      `UPDATE approval_requests SET status = 'delivering', delivery_started_at = ?
+       WHERE id = ? AND (status = 'error' OR (status = 'delivering' AND delivery_started_at < ?))`,
+    )
+    .bind(now, id, now - STUCK_DELIVERY_MS)
     .run();
   return result.meta.changes === 1;
 }

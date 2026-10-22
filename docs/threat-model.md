@@ -22,5 +22,5 @@ release-gate makes a release need two things: a tag push, and a fresh passkey as
 | A repository admin removes the rule, edits the environment or enables admin bypass | Manage environments as code, alert on audit log changes, and keep admin tokens off servers. |
 | PyPI trusted publishing that isn't bound to the environment | Bind the trusted publisher to the environment name. Otherwise a workflow edit that drops `environment:` publishes without the gate. |
 | A compromised Cloudflare account or a compromised deployment of this service | Either can approve requests. A release still needs a tag push. Protect the Cloudflare account with hardware keys. |
-| A compromised maintainer device together with its passkey | Use `min_approvals: 2` for high-value packages. |
+| A compromised maintainer device together with its passkey | Use `min_approvals: 2` for high-value packages, and remove the device's passkey from `/passkeys` as soon as you know. |
 | Private repositories on plans without custom protection rules | GitHub only offers custom deployment protection rules there on Enterprise. |

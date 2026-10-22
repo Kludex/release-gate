@@ -27,20 +27,32 @@ export const Passkeys = ({ credentials }: Props) => (
       ) : (
         <ul class={rows}>
           {credentials.map((credential) => (
-            <li class="flex flex-wrap items-center gap-x-4 gap-y-1 py-4">
-              <PasskeyIcon class="size-6" />
-              <span class="text-xl font-semibold">{credential.name}</span>
-              <span class={`${meta} text-grey-600 sm:ml-auto`}>
-                added <time>{formatTime(credential.created_at)}</time>
-                {" · "}
-                {credential.last_used_at ? (
-                  <>
-                    used <time>{formatTime(credential.last_used_at)}</time>
-                  </>
-                ) : (
-                  "never used"
-                )}
-              </span>
+            <li class="flex items-center gap-4 py-4">
+              <PasskeyIcon class="size-6 shrink-0" />
+              <div class="min-w-0 flex-1 space-y-0.5">
+                <span class="block break-words text-xl font-semibold">{credential.name}</span>
+                <span class={`${meta} block text-grey-600`}>
+                  added <time>{formatTime(credential.created_at)}</time>
+                  {" · "}
+                  {credential.last_used_at ? (
+                    <>
+                      used <time>{formatTime(credential.last_used_at)}</time>
+                    </>
+                  ) : (
+                    "never used"
+                  )}
+                </span>
+              </div>
+              {credentials.length > 1 && (
+                <PasskeyForm
+                  action="/passkeys/revoke"
+                  challenge="/passkeys/revoke/challenge"
+                  fields={{ credential_id: credential.credential_id }}
+                  label="Remove"
+                  tone="danger"
+                  small
+                />
+              )}
             </li>
           ))}
         </ul>

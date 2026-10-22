@@ -101,7 +101,9 @@ admin.post("/admin/:owner/:repo/invites", async (c) => {
 admin.post("/admin/:owner/:repo/approvers/remove", async (c) => {
   const { user, repo, body } = await verifiedAdmin(c);
   const userId = Number(body.user_id);
-  if (!(await removeApprover(c.env.DB, repo, userId))) fail(404, "Approver not found");
+  const removed = await removeApprover(c.env.DB, repo, userId);
+  if (removed === "missing") fail(404, "Approver not found");
+  if (removed === "last-admin") fail(409, "Add another admin before removing the last one");
   await audit(c.env.DB, { actor: user, action: "approver.removed", repo, details: { userId } });
   return c.json({ redirect: `/admin/${repo}` });
 });

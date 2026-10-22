@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { github, releaseRoutes } from "./github";
+import { CALLBACK_URL, github, releaseRoutes } from "./github";
 import {
   ALICE,
   addMember,
@@ -299,6 +299,43 @@ describe("failed callbacks", () => {
     );
     expect(responses.map((r) => r.status).sort()).toEqual([200, 409]);
     expect(github.callbacks().map((c) => c.state)).toEqual(["approved", "approved"]);
+  });
+
+  it("lets an admin resend a delivery whose worker never finished", async () => {
+    const admin = await bootstrapAdmin();
+    const id = await pendingRequest();
+    let finish = () => {};
+    const hung = new Promise<void>((resolve) => {
+      finish = resolve;
+    });
+    let attempts = 0;
+    github.on("POST", CALLBACK_URL, async () => {
+      attempts += 1;
+      if (attempts === 1) await hung;
+      return new Response(null, { status: 204 });
+    });
+    const stuck = vote(admin, id, "approve");
+    await vi.waitFor(async () => expect((await latestRequest()).status).toBe("delivering"));
+    const retry = () =>
+      passkeyAction(admin, `/requests/${id}/challenge`, `/requests/${id}/retry-callback`, {
+        action: "retry",
+      });
+
+    const early = await retry();
+    expect(early.status).toBe(409);
+    expect(await early.json()).toEqual({ error: "This request has no failed or stuck callback" });
+    const detail = () => call(`/requests/${id}`, { cookie: admin.cookie }).then((r) => r.text());
+    expect(await detail()).not.toContain("Retry sending");
+
+    vi.useFakeTimers({ toFake: ["Date"], now: Date.now() + 6 * 60 * 1000 });
+    expect(await detail()).toContain("Sending the decision to GitHub never finished");
+    expect((await retry()).status).toBe(200);
+    expect(await latestRequest()).toMatchObject({ status: "approved" });
+    expect(github.callbacks().map((c) => c.state)).toEqual(["approved", "approved"]);
+
+    finish();
+    expect((await stuck).status).toBe(200);
+    expect(await latestRequest()).toMatchObject({ status: "approved" });
   });
 
   it("records a failed installation token request as an error", async () => {

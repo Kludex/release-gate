@@ -6,11 +6,11 @@ import {
   verifyRegistration,
 } from "@/auth/webauthn";
 import { audit } from "@/db/audit";
-import { listCredentials } from "@/db/credentials";
+import { deleteCredential, listCredentials } from "@/db/credentials";
 import { consumeBootstrap, consumeInvite } from "@/db/enrollment";
 import { ensurePolicy, upsertApprover } from "@/db/repos";
 import type { AppEnv } from "@/env";
-import { currentUser, fail, jsonBody, sha256Hex } from "@/http";
+import { currentUser, fail, jsonBody, sha256Hex, stringField } from "@/http";
 import { Layout } from "@/ui/Layout";
 import { Passkeys } from "@/ui/Passkeys";
 
@@ -28,6 +28,22 @@ passkeys.get("/passkeys", async (c) => {
 
 passkeys.post("/passkeys/challenge", async (c) => {
   return c.json(await authenticationChallenge(c.env, currentUser(c), "add-passkey"));
+});
+
+passkeys.post("/passkeys/revoke/challenge", async (c) => {
+  return c.json(await authenticationChallenge(c.env, currentUser(c), "revoke-passkey"));
+});
+
+passkeys.post("/passkeys/revoke", async (c) => {
+  const user = currentUser(c);
+  const body = await jsonBody(c);
+  await verifyAuthentication(c.env, user, body, ["revoke-passkey"]);
+  const credentialId = stringField(body, "credential_id");
+  const deleted = await deleteCredential(c.env.DB, user.id, credentialId);
+  if (deleted === "missing") fail(404, "Passkey not found");
+  if (deleted === "last") fail(409, "Add another passkey before removing your last one");
+  await audit(c.env.DB, { actor: user, action: "passkey.revoked", details: { credentialId } });
+  return c.json({ redirect: "/passkeys" });
 });
 
 passkeys.post("/passkeys/register/options", async (c) => {

@@ -1,10 +1,11 @@
-import { expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { Authenticator } from "./authenticator";
 import { github } from "./github";
-import type { Ceremony } from "./helpers";
+import type { Ceremony, Member } from "./helpers";
 import {
   ADMIN,
   ALICE,
+  addMember,
   BOB,
   bootstrapAdmin,
   call,
@@ -190,4 +191,72 @@ it("refuses an attestation that does not verify", async () => {
     },
   });
   expect(await verified.json()).toEqual({ error: "Passkey registration failed" });
+});
+
+describe("revoking passkeys", () => {
+  const revoke = (member: Member, credentialId: string) =>
+    passkeyAction(member, "/passkeys/revoke/challenge", "/passkeys/revoke", {
+      credential_id: credentialId,
+    });
+
+  async function addSecondPasskey(member: Member): Promise<Member> {
+    const response = await passkeyAction(
+      member,
+      "/passkeys/challenge",
+      "/passkeys/register/options",
+    );
+    const { registration } = await response.json<{ registration: Ceremony }>();
+    const second = { ...member, passkey: await Authenticator.create() };
+    expect((await register(second, registration)).status).toBe(200);
+    return second;
+  }
+
+  it("removes a lost passkey so it can no longer approve", async () => {
+    const admin = await bootstrapAdmin();
+    const spare = await addSecondPasskey(admin);
+    const page = await (await call("/passkeys", { cookie: admin.cookie })).text();
+    expect(page).toContain(`value="${admin.passkey.id}"`);
+
+    expect((await revoke(spare, admin.passkey.id)).status).toBe(200);
+    const id = await pendingRequest();
+    const lost = await vote(admin, id, "approve");
+    expect(await lost.json()).toEqual({ error: "This passkey is not registered to your account" });
+    expect((await vote(spare, id, "approve")).status).toBe(200);
+  });
+
+  it("keeps the last passkey", async () => {
+    const admin = await bootstrapAdmin();
+    const page = await (await call("/passkeys", { cookie: admin.cookie })).text();
+    expect(page).not.toContain("/passkeys/revoke");
+    const response = await revoke(admin, admin.passkey.id);
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({
+      error: "Add another passkey before removing your last one",
+    });
+  });
+
+  it("refuses to remove another user's passkey", async () => {
+    const admin = await bootstrapAdmin();
+    const alice = await addSecondPasskey(await addMember(admin, ALICE));
+    await addSecondPasskey(admin);
+    const response = await revoke(alice, admin.passkey.id);
+    expect(response.status).toBe(404);
+    expect(await response.json()).toEqual({ error: "Passkey not found" });
+  });
+
+  it("requires a passkey check", async () => {
+    const admin = await bootstrapAdmin();
+    await addSecondPasskey(admin);
+    const response = await call("/passkeys/revoke", {
+      cookie: admin.cookie,
+      body: { credential_id: admin.passkey.id },
+    });
+    expect(response.status).toBe(400);
+    const wrongPurpose = await passkeyAction(admin, "/passkeys/challenge", "/passkeys/revoke", {
+      credential_id: admin.passkey.id,
+    });
+    expect(await wrongPurpose.json()).toEqual({
+      error: "This challenge was issued for another action",
+    });
+  });
 });
