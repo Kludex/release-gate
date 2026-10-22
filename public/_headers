@@ -1,6 +1,6 @@
 /*
   Content-Security-Policy: default-src 'none'; frame-ancestors 'none'; base-uri 'none'
   X-Frame-Options: DENY
-  Referrer-Policy: no-referrer
+  Referrer-Policy: same-origin
   X-Content-Type-Options: nosniff
   Strict-Transport-Security: max-age=63072000; includeSubDomains

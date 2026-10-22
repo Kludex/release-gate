@@ -102,18 +102,6 @@ invite.
 
 A repository that nobody has set up gets every deployment rejected.
 
-## Rejected runs
-
-GitHub keeps a rejected run **Waiting** instead of failing it, until it times out after 30 days. Nothing is released.
-Cancel it from the run page, or with the CLI:
-
-```bash
-gh run cancel <run-id> --repo owner/name
-```
-
-release-gate could cancel runs itself, but that needs the **Actions: write** permission, which also lets the app start
-and re-run workflows. A smaller permission set is the better trade.
-
 ## Adding approvers
 
 1. As an admin, open `PUBLIC_ORIGIN/admin/<owner>/<repo>`, enter the approver's GitHub login and confirm with your

@@ -40,10 +40,6 @@ fresh passkey assertion, so a stolen token alone can't release.
    expires after 5 minutes, and is bound to that user, that request and that decision.
 5. Once `min_approvals` distinct approvers approve, or anyone rejects, release-gate posts the decision to GitHub.
 
-> [!NOTE]
-> GitHub does not fail a run when release-gate rejects it. The run stays **Waiting** until it times out after 30 days.
-> Nothing is released. Cancel it from the run page, or with `gh run cancel <run-id> --repo owner/name`.
-
 GitHub sign-in only identifies the user. The passkey is the second factor.
 
 ## Policy

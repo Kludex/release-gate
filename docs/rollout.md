@@ -45,7 +45,7 @@ jobs:
 
 - [x] Push `v0.0.1`. The job waits, and the request shows up in release-gate. Approve it with your passkey, and the job
       prints `released`.
-- [x] Push `v0.0.2` and reject it. GitHub records the rejection, and the run stays **Waiting** until you cancel it.
+- [x] Push `v0.0.2` and reject it. The job fails a few minutes later. GitHub shows **Waiting** until then.
 - [x] Run the workflow from a branch, for example by temporarily adding `workflow_dispatch` and starting it on `main`.
       It is auto-rejected with "is not a tag".
 - [x] Push `v0.0.3`, then try to approve it with a PAT. GitHub answers "No pending deployment requests to approve":

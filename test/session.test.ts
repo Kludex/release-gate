@@ -150,7 +150,7 @@ it("sets security headers on every response", async () => {
     "default-src 'none'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self'; connect-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'",
   );
   expect(response.headers.get("X-Frame-Options")).toBe("DENY");
-  expect(response.headers.get("Referrer-Policy")).toBe("no-referrer");
+  expect(response.headers.get("Referrer-Policy")).toBe("same-origin");
   expect(response.headers.get("X-Content-Type-Options")).toBe("nosniff");
 });
 

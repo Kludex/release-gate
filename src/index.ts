@@ -26,7 +26,8 @@ app.use(
       baseUri: ["'none'"],
     },
     xFrameOptions: "DENY",
-    referrerPolicy: "no-referrer",
+    // `no-referrer` makes browsers send `Origin: null` on form POSTs, which the origin check blocks.
+    referrerPolicy: "same-origin",
   }),
 );
 
