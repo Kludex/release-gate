@@ -319,7 +319,7 @@ describe("revoking passkeys", () => {
     const admin = await setUpAdmin();
     const page = await (await call("/passkeys", { cookie: admin.cookie })).text();
     expect(page).not.toContain("/passkeys/revoke");
-    expect(page).toContain("To remove this passkey, add another one first.");
+    expect(page).toContain("Add a second passkey first");
     const response = await revoke(admin, admin.passkey.id);
     expect(response.status).toBe(409);
     expect(await response.json()).toEqual({

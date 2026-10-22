@@ -39,7 +39,26 @@ export const Passkeys = ({ credentials }: Props) => (
                   )}
                 </span>
               </div>
-              {credentials.length > 1 && (
+              {credentials.length === 1 ? (
+                <span class="group relative">
+                  <button
+                    type="button"
+                    aria-disabled="true"
+                    aria-describedby="last-passkey"
+                    class="inline-flex cursor-not-allowed items-center gap-2.5 rounded-full border-2 border-grey-200 px-4 py-1.5 text-base font-semibold text-grey-600"
+                  >
+                    <PasskeyIcon class="size-4 shrink-0" />
+                    Remove
+                  </button>
+                  <span
+                    id="last-passkey"
+                    role="tooltip"
+                    class="pointer-events-none absolute right-0 bottom-full mb-2 w-max rounded-xl bg-black px-3 py-1.5 text-sm text-white opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100"
+                  >
+                    Add a second passkey first
+                  </span>
+                </span>
+              ) : (
                 <PasskeyForm
                   action="/passkeys/revoke"
                   challenge="/passkeys/revoke/challenge"
@@ -52,12 +71,6 @@ export const Passkeys = ({ credentials }: Props) => (
             </li>
           ))}
         </ul>
-      )}
-      {credentials.length === 1 && (
-        <p class="mt-6 max-w-[60ch] text-lg text-grey-600">
-          To remove this passkey, add another one first. Adding a passkey needs an existing one, so
-          release-gate keeps your last.
-        </p>
       )}
     </Section>
     {credentials.length > 0 && (
