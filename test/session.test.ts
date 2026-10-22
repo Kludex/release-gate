@@ -27,7 +27,7 @@ it("hides repositories that are already set up", async () => {
   expect(page).not.toContain('<option value="acme/widgets">');
   expect(page).toContain('data-challenge="/repos/challenge"');
   expect(await home(await signIn(BOB, { 7: [admin("acme/widgets")] }))).toContain(
-    "No repositories to set up.",
+    "is already set up",
   );
 });
 
@@ -36,7 +36,7 @@ it("refreshes the list on every sign-in", async () => {
     '<option value="acme/widgets">',
   );
   const page = await home(await signIn(BOB, null));
-  expect(page).toContain("No repositories to set up.");
+  expect(page).toContain("Install the release-gate app on a repository you administer");
   expect(page).toContain("not an approver for any repository yet");
 });
 

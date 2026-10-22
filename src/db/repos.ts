@@ -112,16 +112,18 @@ export async function replaceUserRepos(
   ]);
 }
 
-/** Repositories from the user's last sign-in that nobody has set up yet. */
-export async function listClaimableRepos(db: D1Database, userId: number): Promise<string[]> {
+export type UserRepo = { repo_full_name: string; claimed: number };
+
+/** Repositories from the user's last sign-in, and whether someone has set them up. */
+export async function listUserRepos(db: D1Database, userId: number): Promise<UserRepo[]> {
   const { results } = await db
     .prepare(
-      `SELECT repo_full_name FROM user_repos WHERE github_user_id = ?
-       AND repo_full_name NOT IN (SELECT repo_full_name FROM approvers) ORDER BY 1`,
+      `SELECT repo_full_name, repo_full_name IN (SELECT repo_full_name FROM approvers) AS claimed
+       FROM user_repos WHERE github_user_id = ? ORDER BY 1`,
     )
     .bind(userId)
-    .all<{ repo_full_name: string }>();
-  return results.map((row) => row.repo_full_name);
+    .all<UserRepo>();
+  return results;
 }
 
 export function upsertApprover(

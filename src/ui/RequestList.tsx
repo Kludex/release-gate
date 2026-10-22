@@ -1,3 +1,4 @@
+import type { UserRepo } from "@/db/repos";
 import type { ApprovalRequest } from "@/db/requests";
 import { Blob, GitHubIcon } from "@/ui/Icons";
 import { Padlock } from "@/ui/Illustration";
@@ -10,7 +11,7 @@ type Props = {
   open: ApprovalRequest[];
   recent: ApprovalRequest[];
   repos: string[];
-  claimable: string[];
+  installed: UserRepo[];
 };
 
 const STATUS_COLORS = {
@@ -58,68 +59,72 @@ const List = ({ requests, empty }: { requests: ApprovalRequest[]; empty: string 
     </ul>
   );
 
-export const RequestList = ({ login, hasPasskey, open, recent, repos, claimable }: Props) => (
-  <>
-    <PageTitle
-      title="Releases"
-      subtitle={`Hi @${login}. Tag pushes to protected environments wait here for your passkey.`}
-    />
-    {repos.length === 0 && (
-      <p class="mt-10 max-w-[60ch] rounded-3xl bg-cream px-6 py-5 text-xl">
-        You are not an approver for any repository yet. Set up one you administer on GitHub below,
-        or enter an invite code from an admin on the{" "}
-        <a href="/invite" class={link}>
-          invite page
-        </a>
-        .
-      </p>
-    )}
-    <Section title="Waiting for a decision">
-      <List requests={open} empty="Nothing is waiting for you." />
-    </Section>
-    <Section title="Recent decisions">
-      <List requests={recent} empty="No decisions yet." />
-    </Section>
-    {repos.length > 0 && (
-      <Section title="Repositories you administer">
-        <ul class="space-y-3 text-xl">
-          {repos.map((repo) => (
-            <li>
-              <a href={`/admin/${repo}`} class={link}>
-                {repo}
-              </a>
-            </li>
-          ))}
-        </ul>
-      </Section>
-    )}
-    <Section title="Set up a repository">
-      <p class="mb-8 max-w-[60ch] text-xl">
-        Repositories you administer on GitHub that have the release-gate app installed. You become
-        the first admin of the one you pick. Installed it just now?{" "}
-        <a href="/auth/login" class={link}>
-          Refresh the list
-        </a>
-        .
-      </p>
-      {claimable.length === 0 ? (
-        <Empty>No repositories to set up.</Empty>
-      ) : (
-        <PasskeyForm
-          action="/repos"
-          challenge={hasPasskey ? "/repos/challenge" : undefined}
-          label={hasPasskey ? "Set up repository" : "Register a passkey and set up"}
-        >
-          <Field label="Repository">
-            <span class="block max-w-md font-mono">
-              <Select name="repo" options={claimable} />
-            </span>
-          </Field>
-        </PasskeyForm>
+export const RequestList = ({ login, hasPasskey, open, recent, repos, installed }: Props) => {
+  const claimable = installed.filter((repo) => !repo.claimed).map((repo) => repo.repo_full_name);
+  return (
+    <>
+      <PageTitle
+        title="Releases"
+        subtitle={`Hi @${login}. Tag pushes to protected environments wait here for your passkey.`}
+      />
+      {repos.length === 0 && (
+        <p class="mt-10 max-w-[60ch] rounded-3xl bg-cream px-6 py-5 text-xl">
+          You are not an approver for any repository yet. Set up one you administer on GitHub below,
+          or enter an invite code from an admin on the{" "}
+          <a href="/invite" class={link}>
+            invite page
+          </a>
+          .
+        </p>
       )}
-    </Section>
-  </>
-);
+      <Section title="Waiting for a decision">
+        <List requests={open} empty="Nothing is waiting for you." />
+      </Section>
+      <Section title="Recent decisions">
+        <List requests={recent} empty="No decisions yet." />
+      </Section>
+      {repos.length > 0 && (
+        <Section title="Repositories you administer">
+          <ul class="space-y-3 text-xl">
+            {repos.map((repo) => (
+              <li>
+                <a href={`/admin/${repo}`} class={link}>
+                  {repo}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </Section>
+      )}
+      <Section title="Set up a repository">
+        <p class="mb-8 max-w-[60ch] text-xl">
+          {installed.length === 0
+            ? "Install the release-gate app on a repository you administer on GitHub, then "
+            : claimable.length === 0
+              ? "Every repository you administer with the release-gate app installed is already set up. To add another, install the app on it, then "
+              : "Pick a repository you administer on GitHub that has the release-gate app installed. You become its first admin. Missing one? Install the app on it, then "}
+          <a href="/auth/login" class={link}>
+            refresh the list
+          </a>
+          .
+        </p>
+        {claimable.length > 0 && (
+          <PasskeyForm
+            action="/repos"
+            challenge={hasPasskey ? "/repos/challenge" : undefined}
+            label={hasPasskey ? "Set up repository" : "Register a passkey and set up"}
+          >
+            <Field label="Repository">
+              <span class="block max-w-md font-mono">
+                <Select name="repo" options={claimable} />
+              </span>
+            </Field>
+          </PasskeyForm>
+        )}
+      </Section>
+    </>
+  );
+};
 
 const STEPS = [
   ["A tag push pauses the job", "GitHub holds the deployment and asks release-gate."],
