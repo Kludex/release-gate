@@ -14,6 +14,7 @@ const TABLES = [
   "challenges",
   "invites",
   "audit_log",
+  "user_repos",
 ];
 
 beforeEach(async () => {

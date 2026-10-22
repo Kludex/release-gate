@@ -82,7 +82,9 @@ Deploys are manual. CI never holds Cloudflare credentials.
 ## 7. Set up a repository
 
 1. Install the app on the repository.
-2. Open `PUBLIC_ORIGIN`, sign in with GitHub, and enter the repository under **Set up a repository**.
+2. Open `PUBLIC_ORIGIN`, sign in with GitHub, and pick the repository under **Set up a repository**.
+   The list holds the repositories where you are a GitHub admin and the app is installed, as of your last sign-in.
+   Use **Refresh the list** after installing the app.
 3. Register your first passkey, or confirm with an existing one. You become the repository's admin.
 
 Only a GitHub admin of the repository can set it up, and only while nobody else has. After that, people join by
@@ -99,6 +101,18 @@ invite.
 3. Turn off **Allow administrators to bypass configured protection rules**.
 
 A repository that nobody has set up gets every deployment rejected.
+
+## Rejected runs
+
+GitHub keeps a rejected run **Waiting** instead of failing it, until it times out after 30 days. Nothing is released.
+Cancel it from the run page, or with the CLI:
+
+```bash
+gh run cancel <run-id> --repo owner/name
+```
+
+release-gate could cancel runs itself, but that needs the **Actions: write** permission, which also lets the app start
+and re-run workflows. A smaller permission set is the better trade.
 
 ## Adding approvers
 

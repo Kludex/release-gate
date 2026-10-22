@@ -43,16 +43,16 @@ jobs:
 
 ## 4. Sandbox tests
 
-- [ ] Push `v0.0.1`. The job waits, and the request shows up in release-gate. Approve it with your passkey, and the job
+- [x] Push `v0.0.1`. The job waits, and the request shows up in release-gate. Approve it with your passkey, and the job
       prints `released`.
-- [ ] Push `v0.0.2` and reject it. The job fails.
-- [ ] Run the workflow from a branch, for example by temporarily adding `workflow_dispatch` and starting it on `main`.
+- [x] Push `v0.0.2` and reject it. GitHub records the rejection, and the run stays **Waiting** until you cancel it.
+- [x] Run the workflow from a branch, for example by temporarily adding `workflow_dispatch` and starting it on `main`.
       It is auto-rejected with "is not a tag".
-- [ ] Push `v0.0.3`, then try to approve it with a PAT. Nothing changes:
+- [x] Push `v0.0.3`, then try to approve it with a PAT. GitHub answers "No pending deployment requests to approve":
       `gh api -X POST repos/Kludex/release-gate-sandbox/actions/runs/<run_id>/pending_deployments -f state=approved -F 'environment_ids[]=<id>' -f comment=x`
 - [ ] Invite a second account, set `min_approvals` to 2, and check that the callback fires only after the second
       approval.
-- [ ] Check that the deployment's `ref` really is the tag. release-gate accepts both `v1.0.0` and `refs/tags/v1.0.0`.
+- [x] Check that the deployment's `ref` really is the tag. GitHub sends `v0.0.1`.
 
 ## 5. Starlette
 

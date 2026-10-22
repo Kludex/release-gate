@@ -96,6 +96,34 @@ export async function listAdminRepos(db: D1Database, userId: number): Promise<st
   return results.map((row) => row.repo_full_name);
 }
 
+/** Replaces the repositories `userId` could set up, as GitHub reported them at sign-in. */
+export async function replaceUserRepos(
+  db: D1Database,
+  userId: number,
+  repos: string[],
+): Promise<void> {
+  await db.batch([
+    db.prepare("DELETE FROM user_repos WHERE github_user_id = ?").bind(userId),
+    ...repos.map((repo) =>
+      db
+        .prepare("INSERT INTO user_repos (github_user_id, repo_full_name) VALUES (?, ?)")
+        .bind(userId, repo),
+    ),
+  ]);
+}
+
+/** Repositories from the user's last sign-in that nobody has set up yet. */
+export async function listClaimableRepos(db: D1Database, userId: number): Promise<string[]> {
+  const { results } = await db
+    .prepare(
+      `SELECT repo_full_name FROM user_repos WHERE github_user_id = ?
+       AND repo_full_name NOT IN (SELECT repo_full_name FROM approvers) ORDER BY 1`,
+    )
+    .bind(userId)
+    .all<{ repo_full_name: string }>();
+  return results.map((row) => row.repo_full_name);
+}
+
 export function upsertApprover(
   db: D1Database,
   approver: Omit<Approver, "created_at">,

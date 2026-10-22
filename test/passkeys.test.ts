@@ -32,12 +32,7 @@ describe("setting up a repository", () => {
   });
 
   it("registers a first passkey or confirms with an existing one", async () => {
-    const page = await (await call("/", { cookie: await signIn(BOB) })).text();
-    expect(page).toContain("Register a passkey and set up");
-    expect(page).toContain("not an approver for any repository yet");
     const admin = await setUpAdmin();
-    const home = await (await call("/", { cookie: admin.cookie })).text();
-    expect(home).toContain('data-challenge="/repos/challenge"');
     claimRoutes(ADMIN, "acme/other");
     const bare = await call("/repos", { cookie: admin.cookie, body: { repo: "acme/other" } });
     expect(bare.status).toBe(400);

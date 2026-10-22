@@ -40,6 +40,10 @@ fresh passkey assertion, so a stolen token alone can't release.
    expires after 5 minutes, and is bound to that user, that request and that decision.
 5. Once `min_approvals` distinct approvers approve, or anyone rejects, release-gate posts the decision to GitHub.
 
+> [!NOTE]
+> GitHub does not fail a run when release-gate rejects it. The run stays **Waiting** until it times out after 30 days.
+> Nothing is released. Cancel it from the run page, or with `gh run cancel <run-id> --repo owner/name`.
+
 GitHub sign-in only identifies the user. The passkey is the second factor.
 
 ## Policy
@@ -60,7 +64,7 @@ invites, because a token holder could change GitHub permissions.
 
 1. Install the app on your repository. The hosted instance is
    [secure-release-gate](https://github.com/apps/secure-release-gate), or [host your own](docs/self-hosting.md).
-2. Open the instance, sign in with GitHub, and set up the repository on the home page. You register your first passkey
+2. Open the instance, sign in with GitHub, and pick the repository under **Set up a repository**. You register your first passkey
    and become its admin.
 3. Under **Settings → Environments**, enable the app as a deployment protection rule on the release environment.
 

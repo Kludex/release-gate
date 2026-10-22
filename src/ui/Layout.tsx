@@ -1,7 +1,7 @@
 import { raw } from "hono/html";
 import type { Child } from "hono/jsx";
 import type { User } from "@/env";
-import { Blob } from "@/ui/Icons";
+import { Blob, GitHubIcon } from "@/ui/Icons";
 
 type Page = "requests" | "passkeys" | "audit";
 
@@ -57,6 +57,7 @@ export const Layout = ({ title, user, page, children }: Props) => (
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>{`${title} · release-gate`}</title>
         <link rel="preload" href="/fonts/jost.woff2" as="font" type="font/woff2" crossorigin="" />
+        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
         <link rel="stylesheet" href="/app.css" />
         <script type="module" src="/app.js" />
       </head>
@@ -84,10 +85,20 @@ export const Layout = ({ title, user, page, children }: Props) => (
           )}
         </header>
         <main class="mx-auto w-full max-w-4xl flex-1 px-5 pb-24 lg:px-8">{children}</main>
-        <footer class="px-5 pb-10 text-center text-base text-grey-600">
-          release-gate is open source under the MIT license.{" "}
-          <a href="https://github.com/Kludex/release-gate" class={`${link} text-black`}>
-            Read the code
+        <footer class="space-y-3 px-5 pb-10 text-center text-base text-grey-600">
+          <p>
+            Built with{" "}
+            <span role="img" aria-label="love">
+              ❤️
+            </span>{" "}
+            by Marcelo Trylesinski
+          </p>
+          <a
+            href="https://github.com/Kludex/release-gate"
+            class={`${link} inline-flex items-center gap-2 text-black`}
+          >
+            <GitHubIcon class="size-4" />
+            Kludex/release-gate
           </a>
         </footer>
       </body>

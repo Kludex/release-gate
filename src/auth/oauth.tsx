@@ -2,7 +2,9 @@ import { Hono } from "hono";
 import { deleteCookie, getCookie, setCookie } from "hono/cookie";
 import { endSession, startSession } from "@/auth/session";
 import { audit } from "@/db/audit";
+import { replaceUserRepos } from "@/db/repos";
 import type { AppEnv, User } from "@/env";
+import { installedAdminRepos } from "@/github/user";
 import { fail, randomToken } from "@/http";
 import { Redirect } from "@/ui/Layout";
 
@@ -56,6 +58,7 @@ oauth.get("/callback", async (c) => {
   });
   if (!userResponse.ok) fail(502, "Could not read the GitHub user");
   const { id, login } = await userResponse.json<User>();
+  await replaceUserRepos(c.env.DB, id, await installedAdminRepos(access_token));
   await startSession(c, { id, login });
   await audit(c.env.DB, { actor: { id, login }, action: "session.created" });
   // A same-site navigation, so the browser sends the new Strict cookie.

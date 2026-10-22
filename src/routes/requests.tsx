@@ -2,7 +2,13 @@ import { Hono } from "hono";
 import { authenticationChallenge, verifyAuthentication } from "@/auth/webauthn";
 import { audit } from "@/db/audit";
 import { listCredentials } from "@/db/credentials";
-import { getApprover, getPolicy, listAdminRepos, type RepoPolicy } from "@/db/repos";
+import {
+  getApprover,
+  getPolicy,
+  listAdminRepos,
+  listClaimableRepos,
+  type RepoPolicy,
+} from "@/db/repos";
 import {
   type ApprovalRequest,
   canRetryDelivery,
@@ -34,10 +40,11 @@ requests.get("/", async (c) => {
       </Layout>,
     );
   }
-  const [open, recent, repos, passkeys] = await Promise.all([
+  const [open, recent, repos, claimable, passkeys] = await Promise.all([
     listRequestsForApprover(c.env.DB, user.id, true),
     listRequestsForApprover(c.env.DB, user.id, false),
     listAdminRepos(c.env.DB, user.id),
+    listClaimableRepos(c.env.DB, user.id),
     listCredentials(c.env.DB, user.id),
   ]);
   return c.html(
@@ -48,6 +55,7 @@ requests.get("/", async (c) => {
         open={open}
         recent={recent}
         repos={repos}
+        claimable={claimable}
       />
     </Layout>,
   );

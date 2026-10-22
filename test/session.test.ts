@@ -1,5 +1,44 @@
 import { expect, it, vi } from "vitest";
-import { ADMIN, call, cookie, ORIGIN, setUpAdmin, signIn } from "./helpers";
+import { ADMIN, BOB, call, cookie, ORIGIN, setUpAdmin, signIn } from "./helpers";
+
+const home = async (session: string) => (await call("/", { cookie: session })).text();
+const admin = (full_name: string) => ({ full_name, permissions: { admin: true } });
+
+it("offers the installed repositories a user administers on GitHub", async () => {
+  const session = await signIn(BOB, {
+    7: [admin("acme/widgets"), { full_name: "acme/pushable", permissions: { admin: false } }],
+    8: [{ full_name: "acme/public" }],
+    9: null,
+  });
+  const page = await home(session);
+  expect(page).toContain('<option value="acme/widgets">');
+  expect(page).not.toContain("acme/pushable");
+  expect(page).not.toContain("acme/public");
+  expect(page).toContain("Register a passkey and set up");
+});
+
+it("hides repositories that are already set up", async () => {
+  await setUpAdmin();
+  const session = await signIn(ADMIN, {
+    7: [admin("acme/widgets"), admin("acme/other")],
+  });
+  const page = await home(session);
+  expect(page).toContain('<option value="acme/other">');
+  expect(page).not.toContain('<option value="acme/widgets">');
+  expect(page).toContain('data-challenge="/repos/challenge"');
+  expect(await home(await signIn(BOB, { 7: [admin("acme/widgets")] }))).toContain(
+    "No repositories to set up.",
+  );
+});
+
+it("refreshes the list on every sign-in", async () => {
+  expect(await home(await signIn(BOB, { 7: [admin("acme/widgets")] }))).toContain(
+    '<option value="acme/widgets">',
+  );
+  const page = await home(await signIn(BOB, null));
+  expect(page).toContain("No repositories to set up.");
+  expect(page).toContain("not an approver for any repository yet");
+});
 
 it("signs in with GitHub and shows the dashboard", async () => {
   const session = await signIn(ADMIN);
@@ -54,6 +93,7 @@ it("sets a strict, host-only session cookie", async () => {
   const { github, API } = await import("./github");
   github.on("POST", "https://github.com/login/oauth/access_token", { access_token: "t" });
   github.on("GET", `${API}/user`, ADMIN);
+  github.on("GET", `${API}/user/installations?per_page=100`, { installations: [] });
   const callback = await call(`/auth/callback?code=abc&state=${state}`, {
     cookie: cookie(login, "__Host-oauth_state"),
   });

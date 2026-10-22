@@ -2,7 +2,7 @@ import type { ApprovalRequest } from "@/db/requests";
 import { Blob, GitHubIcon } from "@/ui/Icons";
 import { Padlock } from "@/ui/Illustration";
 import { Empty, formatTime, link, meta, PageTitle, Section, Tag } from "@/ui/Layout";
-import { Field, inputClass, PasskeyForm } from "@/ui/PasskeyForm";
+import { Field, PasskeyForm, Select } from "@/ui/PasskeyForm";
 
 type Props = {
   login: string;
@@ -10,6 +10,7 @@ type Props = {
   open: ApprovalRequest[];
   recent: ApprovalRequest[];
   repos: string[];
+  claimable: string[];
 };
 
 const STATUS_COLORS = {
@@ -57,7 +58,7 @@ const List = ({ requests, empty }: { requests: ApprovalRequest[]; empty: string 
     </ul>
   );
 
-export const RequestList = ({ login, hasPasskey, open, recent, repos }: Props) => (
+export const RequestList = ({ login, hasPasskey, open, recent, repos, claimable }: Props) => (
   <>
     <PageTitle
       title="Releases"
@@ -94,23 +95,28 @@ export const RequestList = ({ login, hasPasskey, open, recent, repos }: Props) =
     )}
     <Section title="Set up a repository">
       <p class="mb-8 max-w-[60ch] text-xl">
-        Install the release-gate app on a repository you administer on GitHub, then enter it here.
-        You become its first admin.
+        Repositories you administer on GitHub that have the release-gate app installed. You become
+        the first admin of the one you pick. Installed it just now?{" "}
+        <a href="/auth/login" class={link}>
+          Refresh the list
+        </a>
+        .
       </p>
-      <PasskeyForm
-        action="/repos"
-        challenge={hasPasskey ? "/repos/challenge" : undefined}
-        label={hasPasskey ? "Set up repository" : "Register a passkey and set up"}
-      >
-        <Field label="Repository">
-          <input
-            name="repo"
-            required
-            class={`${inputClass} max-w-md font-mono`}
-            placeholder="owner/name"
-          />
-        </Field>
-      </PasskeyForm>
+      {claimable.length === 0 ? (
+        <Empty>No repositories to set up.</Empty>
+      ) : (
+        <PasskeyForm
+          action="/repos"
+          challenge={hasPasskey ? "/repos/challenge" : undefined}
+          label={hasPasskey ? "Set up repository" : "Register a passkey and set up"}
+        >
+          <Field label="Repository">
+            <span class="block max-w-md font-mono">
+              <Select name="repo" options={claimable} />
+            </span>
+          </Field>
+        </PasskeyForm>
+      )}
     </Section>
   </>
 );

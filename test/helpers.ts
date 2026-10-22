@@ -47,11 +47,31 @@ export function cookie(response: Response, name: string): string {
   return header.split(";")[0] as string;
 }
 
-export async function signIn(user: User): Promise<string> {
+export type Repositories = { full_name: string; permissions?: { admin: boolean } }[] | null;
+
+/**
+ * Signs in through GitHub, which reports the app's installations the user can see and their
+ * repositories. `null` makes that GitHub call fail.
+ */
+export async function signIn(
+  user: User,
+  installations: Record<number, Repositories> | null = {},
+): Promise<string> {
   const login = await call("/auth/login");
   const state = new URL(login.headers.get("Location") as string).searchParams.get("state");
+  const failure = () => new Response(null, { status: 401 });
   github.on("POST", "https://github.com/login/oauth/access_token", { access_token: "user-token" });
   github.on("GET", `${API}/user`, user);
+  const ids = Object.keys(installations ?? {}).map((id) => ({ id: Number(id) }));
+  github.on(
+    "GET",
+    `${API}/user/installations?per_page=100`,
+    installations ? { installations: ids } : failure,
+  );
+  for (const [id, repositories] of Object.entries(installations ?? {})) {
+    const url = `${API}/user/installations/${id}/repositories?per_page=100`;
+    github.on("GET", url, repositories ? { repositories } : failure);
+  }
   const callback = await call(`/auth/callback?code=abc&state=${state}`, {
     cookie: cookie(login, "__Host-oauth_state"),
   });
