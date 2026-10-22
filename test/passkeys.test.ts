@@ -27,7 +27,9 @@ describe("setting up a repository", () => {
     const admin = await setUpAdmin();
     const page = await call("/admin/acme/widgets", { cookie: admin.cookie });
     expect(page.status).toBe(200);
-    expect(await page.text()).toContain("@admin");
+    const text = await page.text();
+    expect(text).toContain("@admin");
+    expect(text).toContain('href="https://github.com/acme/widgets/settings/environments"');
     expect(await (await call("/passkeys", { cookie: admin.cookie })).text()).toContain("Test key");
   });
 

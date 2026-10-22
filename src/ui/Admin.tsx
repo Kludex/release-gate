@@ -1,7 +1,16 @@
 import type { Invite } from "@/db/enrollment";
 import type { Approver, RepoPolicy } from "@/db/repos";
-import { formatTime, meta, PageTitle, rows, Section, Tag } from "@/ui/Layout";
+import { formatTime, link, meta, PageTitle, rows, Section, Tag } from "@/ui/Layout";
 import { Checkbox, Field, inputClass, PasskeyForm, Select } from "@/ui/PasskeyForm";
+
+const WORKFLOW = `on:
+  push:
+    tags: ["v*"]
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: pypi`;
 
 type Props = { repo: string; policy: RepoPolicy; approvers: Approver[]; invites: Invite[] };
 
@@ -14,6 +23,25 @@ export const Admin = ({ repo, policy, approvers, invites }: Props) => {
         title={repo}
         subtitle="Who can approve releases, and what they must check. Every change asks for your passkey."
       />
+      <Section title="Connect a workflow">
+        <ol class="max-w-[60ch] list-decimal space-y-5 pl-6 text-xl leading-relaxed marker:font-bold">
+          <li>
+            Run the publishing job on a tag push, in an environment:
+            <pre class="mt-3 overflow-x-auto rounded-2xl bg-cream p-5 font-mono text-base leading-snug">
+              {WORKFLOW}
+            </pre>
+          </li>
+          <li>
+            In{" "}
+            <a href={`https://github.com/${repo}/settings/environments`} class={link}>
+              the repository's environments
+            </a>
+            , open that environment. Under <strong>Deployment protection rules</strong>, check the
+            release-gate app and turn off <strong>Allow administrators to bypass</strong>.
+          </li>
+          <li>Push a tag. The job waits here until approvers confirm with a passkey.</li>
+        </ol>
+      </Section>
       <Section title="Policy">
         <PasskeyForm action={`/admin/${repo}/policy`} challenge={challenge} label="Save policy">
           <Field label="Minimum approvals">
