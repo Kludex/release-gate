@@ -1,22 +1,23 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "release-gate",
+  "account_id": "9e4dfb3dc39e39ef5be599c376636b5c",
   "main": "src/index.ts",
   "compatibility_date": "2026-10-01",
-  "workers_dev": true,
+  "workers_dev": false,
+  "routes": [{ "pattern": "release-gate.marcelotryle.com", "custom_domain": true }],
   "assets": { "directory": "./public", "binding": "ASSETS" },
   "d1_databases": [
     {
       "binding": "DB",
       "database_name": "release-gate",
-      // Replace with the id printed by `wrangler d1 create release-gate`.
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      "database_id": "374da2df-2a8f-4a58-8a3a-1fe05b53e283",
       "migrations_dir": "migrations"
     }
   ],
   "vars": {
     // The exact origin users visit. Passkeys are bound to its hostname.
-    "PUBLIC_ORIGIN": "https://release-gate.example.workers.dev",
+    "PUBLIC_ORIGIN": "https://release-gate.marcelotryle.com",
     "RP_NAME": "release-gate",
     // Comma-separated repos whose admin is created by the bootstrap code.
     "BOOTSTRAP_REPOS": "Kludex/release-gate-sandbox"
