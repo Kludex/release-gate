@@ -1,6 +1,5 @@
 import type { Invite } from "@/db/enrollment";
 import type { Approver, RepoPolicy } from "@/db/repos";
-import { ChevronIcon } from "@/ui/Icons";
 import { formatTime, link, meta, PageTitle, rows, Section, Tag } from "@/ui/Layout";
 import { Checkbox, Field, inputClass, PasskeyForm, Select } from "@/ui/PasskeyForm";
 
@@ -24,12 +23,26 @@ export const Admin = ({ repo, policy, approvers, invites }: Props) => {
         title={repo}
         subtitle="Who can approve releases, and what they must check. Every change asks for your passkey."
       />
-      <details class="group mt-16 lg:mt-20">
-        <summary class="flex cursor-pointer list-none items-center gap-3 text-2xl font-bold lg:text-3xl [&::-webkit-details-marker]:hidden">
-          How do I connect a workflow?
-          <ChevronIcon class="size-6 shrink-0 transition-transform group-open:rotate-180" />
-        </summary>
-        <ol class="mt-6 max-w-[60ch] list-decimal space-y-5 pl-6 text-xl leading-relaxed marker:font-bold">
+      <button type="button" popovertarget="connect" class={`${link} mt-8 cursor-pointer text-xl`}>
+        How do I connect a workflow?
+      </button>
+      <div
+        id="connect"
+        popover="auto"
+        class="m-auto max-h-[90vh] w-[calc(100%-2rem)] max-w-2xl overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl backdrop:bg-black/40 md:p-10"
+      >
+        <div class="mb-6 flex items-baseline justify-between gap-4">
+          <h2 class="text-2xl font-bold lg:text-3xl">Connect a workflow</h2>
+          <button
+            type="button"
+            popovertarget="connect"
+            popovertargetaction="hide"
+            class={`${link} cursor-pointer text-lg`}
+          >
+            Close
+          </button>
+        </div>
+        <ol class="max-w-[60ch] list-decimal space-y-5 pl-6 text-xl leading-relaxed marker:font-bold">
           <li>
             Run the publishing job on a tag push, in an environment:
             <pre class="mt-3 overflow-x-auto rounded-2xl bg-cream p-5 font-mono text-base leading-snug">
@@ -46,7 +59,7 @@ export const Admin = ({ repo, policy, approvers, invites }: Props) => {
           </li>
           <li>Push a tag. The job waits here until approvers confirm with a passkey.</li>
         </ol>
-      </details>
+      </div>
       <Section title="Policy">
         <PasskeyForm action={`/admin/${repo}/policy`} challenge={challenge} label="Save policy">
           <Field label="Minimum approvals">
