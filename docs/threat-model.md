@@ -24,4 +24,5 @@ release-gate makes a release need two things: a tag push, and a fresh passkey as
 | A compromised Cloudflare account or a compromised deployment of this service | Either can approve requests. A release still needs a tag push. Protect the Cloudflare account with hardware keys. |
 | The operator of a hosted instance | The operator holds the app's private key and can approve anything on repositories that installed it. Use an instance whose operator you trust, or self-host. |
 | A compromised maintainer device together with its passkey | Use `min_approvals: 2` for high-value packages, and remove the device's passkey from `/passkeys` as soon as you know. |
+| A leaked notification webhook URL | Whoever has it can post fake messages to the channel, but can't approve anything. Treat it as a secret, and replace it in Slack or Discord if it leaks. |
 | Private repositories on plans without custom protection rules | GitHub only offers custom deployment protection rules there on Enterprise. |

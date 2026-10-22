@@ -12,6 +12,7 @@ import { consumeInvite } from "@/db/enrollment";
 import { upsertApprover } from "@/db/repos";
 import type { AppEnv } from "@/env";
 import { currentUser, fail, jsonBody, stringField } from "@/http";
+import { alert } from "@/notify";
 import { Layout } from "@/ui/Layout";
 import { Passkeys } from "@/ui/Passkeys";
 
@@ -84,7 +85,7 @@ passkeys.post("/passkeys/register/verify", async (c) => {
       added_by: invite.created_by,
     }),
   ]);
-  await audit(db, {
+  await alert(c.env, {
     actor: user,
     action: "invite.accepted",
     repo: invite.repo_full_name,

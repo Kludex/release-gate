@@ -27,6 +27,7 @@ import {
   sha256Hex,
   stringField,
 } from "@/http";
+import { alert, post, WEBHOOK_URL } from "@/notify";
 import { Admin } from "@/ui/Admin";
 import { Audit } from "@/ui/Audit";
 import { Layout } from "@/ui/Layout";
@@ -89,18 +90,27 @@ admin.post("/admin/:owner/:repo/challenge", async (c) => {
 });
 
 admin.post("/admin/:owner/:repo/policy", async (c) => {
-  const { user, repo, body } = await verifiedAdmin(c);
+  const { user, repo, policy: current, body } = await verifiedAdmin(c);
   const minApprovals = Number(body.min_approvals);
   if (!Number.isInteger(minApprovals) || minApprovals < 1 || minApprovals > 10) {
     fail(400, "Minimum approvals must be between 1 and 10");
+  }
+  const notifyUrl = typeof body.notify_url === "string" ? body.notify_url.trim() : "";
+  if (notifyUrl && !WEBHOOK_URL.test(notifyUrl)) fail(400, "Enter a Slack or Discord webhook URL");
+  if (notifyUrl && notifyUrl !== current.notify_url) {
+    const link = `${c.env.PUBLIC_ORIGIN}/admin/${repo}`;
+    await post(notifyUrl, `${repo}: release-gate will post here.`, link).catch((error) =>
+      fail(400, `The webhook refused a test message: ${error.message}`),
+    );
   }
   const policy = {
     min_approvals: minApprovals,
     prevent_self_review: body.prevent_self_review === "1" ? 1 : 0,
     require_default_branch: body.require_default_branch === "1" ? 1 : 0,
   };
-  await updatePolicy(c.env.DB, repo, policy);
-  await audit(c.env.DB, { actor: user, action: "policy.updated", repo, details: policy });
+  await updatePolicy(c.env.DB, repo, { ...policy, notify_url: notifyUrl || null });
+  const details = { ...policy, notifications: Boolean(notifyUrl) };
+  await alert(c.env, { actor: user, action: "policy.updated", repo, details });
   return c.json({ redirect: `/admin/${repo}` });
 });
 
@@ -118,7 +128,7 @@ admin.post("/admin/:owner/:repo/invites", async (c) => {
     created_by: user.id,
     expires_at: Date.now() + INVITE_TTL_MS,
   });
-  await audit(c.env.DB, { actor: user, action: "invite.created", repo, details: { login, role } });
+  await alert(c.env, { actor: user, action: "invite.created", repo, details: { login, role } });
   return c.json({
     message: `Invite code for @${login}: ${code}. It is shown once and expires in 24 hours. Send it outside this app.`,
   });
@@ -130,7 +140,7 @@ admin.post("/admin/:owner/:repo/approvers/remove", async (c) => {
   const removed = await removeApprover(c.env.DB, repo, userId);
   if (removed === "missing") fail(404, "Approver not found");
   if (removed === "last-admin") fail(409, "Add another admin before removing the last one");
-  await audit(c.env.DB, { actor: user, action: "approver.removed", repo, details: { userId } });
+  await alert(c.env, { actor: user, action: "approver.removed", repo, details: { userId } });
   return c.json({ redirect: `/admin/${repo}` });
 });
 
@@ -147,10 +157,10 @@ async function requireAdmin(
 
 async function verifiedAdmin(
   c: Context<AppEnv>,
-): Promise<{ user: User; repo: string; body: Body }> {
+): Promise<{ user: User; repo: string; policy: RepoPolicy; body: Body }> {
   const user = currentUser(c);
-  const { repo } = await requireAdmin(c, user);
+  const { repo, policy } = await requireAdmin(c, user);
   const body = await jsonBody(c);
   await verifyAuthentication(c.env, user, body, [`admin:${repo}`]);
-  return { user, repo, body };
+  return { user, repo, policy, body };
 }

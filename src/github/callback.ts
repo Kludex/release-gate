@@ -1,7 +1,7 @@
-import { audit } from "@/db/audit";
 import { type ApprovalRequest, type Decision, finishDelivery, startDelivery } from "@/db/requests";
 import type { Env } from "@/env";
 import { GitHubError, githubFetch, installationToken } from "@/github/app";
+import { alert } from "@/notify";
 
 const CALLBACK_URL =
   /^https:\/\/api\.github\.com\/repos\/([^/]+\/[^/]+)\/actions\/runs\/(\d+)\/deployment_protection_rule$/;
@@ -41,7 +41,7 @@ export async function deliver(env: Env, request: ApprovalRequest): Promise<void>
     if (!response.ok) throw new GitHubError(`Callback failed with HTTP ${response.status}`);
   } catch (error) {
     await finishDelivery(env.DB, request.id, "error");
-    await audit(env.DB, {
+    await alert(env, {
       ...target,
       action: "callback.failed",
       details: { state, error: String(error) },
@@ -49,5 +49,5 @@ export async function deliver(env: Env, request: ApprovalRequest): Promise<void>
     return;
   }
   await finishDelivery(env.DB, request.id, state);
-  await audit(env.DB, { ...target, action: "callback.delivered", details: { state } });
+  await alert(env, { ...target, action: "callback.delivered", details: { state } });
 }

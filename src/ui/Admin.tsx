@@ -65,6 +65,15 @@ export const Admin = ({ repo, policy, approvers, invites }: Props) => {
           <Checkbox name="require_default_branch" checked={policy.require_default_branch === 1}>
             <strong>Require the default branch.</strong> The tagged commit must be on it.
           </Checkbox>
+          <Field label="Slack or Discord webhook">
+            <input
+              type="url"
+              name="notify_url"
+              value={policy.notify_url ?? ""}
+              placeholder="https://hooks.slack.com/services/..."
+              class={inputClass}
+            />
+          </Field>
         </PasskeyForm>
       </Section>
       <Section title="Approvers">

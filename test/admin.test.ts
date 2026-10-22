@@ -1,4 +1,5 @@
-import { expect, it } from "vitest";
+import { env } from "cloudflare:test";
+import { describe, expect, it } from "vitest";
 import { API, github, REPO, releaseRoutes, SHA } from "./github";
 import {
   ADMIN,
@@ -11,6 +12,7 @@ import {
   pendingRequest,
   protectionRule,
   sendWebhook,
+  setPolicy,
   setUpAdmin,
   signIn,
   vote,
@@ -198,4 +200,116 @@ it("never demotes an admin through an invite", async () => {
   const bob = await addMember(admin, BOB, "admin");
   await addMember(bob, ADMIN);
   expect((await call(`/admin/${REPO}`, { cookie: admin.cookie })).status).toBe(200);
+});
+
+describe("notifications", () => {
+  const SLACK = "https://hooks.slack.com/services/T0/B0/secret";
+  const DISCORD = "https://discord.com/api/webhooks/1/secret-token";
+  const ADMIN_PAGE = `https://gate.test/admin/${REPO}`;
+
+  /** Accepts posts to `url` with `status`, and returns a reader for what was posted. */
+  function hook(url: string, status = 204): () => Record<string, unknown>[] {
+    github.on("POST", url, () => new Response(null, { status }));
+    return () => github.calls.filter((c) => c.url === url).map((c) => JSON.parse(c.body));
+  }
+
+  it("posts releases to Slack", async () => {
+    const admin = await setUpAdmin();
+    const posts = hook(SLACK);
+    await setPolicy(admin, { notify_url: SLACK });
+    const id = await pendingRequest();
+    await vote(admin, id, "approve");
+    await setPolicy(admin, { notify_url: SLACK });
+    expect(posts().map((post) => post.text)).toEqual([
+      `${REPO}: release-gate will post here.\n${ADMIN_PAGE}`,
+      `${REPO}: @admin changed the policy.\n${ADMIN_PAGE}`,
+      `${REPO}: v1.0.0 to pypi is waiting for approval. Started by @pusher.\nhttps://gate.test/requests/${id}`,
+      `${REPO}: v1.0.0 to pypi - Approved by @admin via passkey.\nhttps://gate.test/requests/${id}`,
+      `${REPO}: @admin changed the policy.\n${ADMIN_PAGE}`,
+    ]);
+    const page = await (await call(`/admin/${REPO}`, { cookie: admin.cookie })).text();
+    expect(page).toContain(`value="${SLACK}"`);
+  });
+
+  it("keeps names from rendering as Slack mentions", async () => {
+    const admin = await setUpAdmin();
+    const posts = hook(SLACK);
+    await setPolicy(admin, { notify_url: SLACK });
+    releaseRoutes();
+    await sendWebhook(protectionRule({ environment: "<!here> & co" }));
+    expect(posts().at(-1)?.text).toContain("v1.0.0 to &lt;!here&gt; &amp; co is waiting");
+  });
+
+  it("posts rejections and failed callbacks to Discord without pinging anyone", async () => {
+    const admin = await setUpAdmin();
+    const posts = hook(DISCORD);
+    await setPolicy(admin, { notify_url: DISCORD });
+    releaseRoutes();
+    await sendWebhook(protectionRule({ deployment: { ref: "refs/heads/main", sha: SHA } }));
+    const rejected = await latestRequest();
+    const id = await pendingRequest({ callbackStatus: 500 });
+    await vote(admin, id, "approve");
+    expect(posts().slice(2)).toEqual([
+      {
+        content: `${REPO}: refs/heads/main to pypi - Rejected by release-gate: \\\`refs/heads/main\\\` is not a tag.\nhttps://gate.test/requests/${rejected.id}`,
+        allowed_mentions: { parse: [] },
+      },
+      {
+        content: `${REPO}: v1.0.0 to pypi is waiting for approval. Started by @pusher.\nhttps://gate.test/requests/${id}`,
+        allowed_mentions: { parse: [] },
+      },
+      {
+        content: `${REPO}: v1.0.0 to pypi was approved, but GitHub did not get the decision. An admin can retry it.\nhttps://gate.test/requests/${id}`,
+        allowed_mentions: { parse: [] },
+      },
+    ]);
+  });
+
+  it("posts changes to who can approve", async () => {
+    const admin = await setUpAdmin();
+    const posts = hook(SLACK);
+    await setPolicy(admin, { notify_url: SLACK });
+    await addMember(admin, ALICE);
+    await passkeyAction(admin, ...admin_("/approvers/remove"), { user_id: "2" });
+    expect(posts().map((post) => post.text)).toEqual([
+      expect.any(String),
+      expect.any(String),
+      `${REPO}: @admin invited @alice as approver.\n${ADMIN_PAGE}`,
+      `${REPO}: @alice joined as approver.\n${ADMIN_PAGE}`,
+      `${REPO}: @admin removed an approver.\n${ADMIN_PAGE}`,
+    ]);
+  });
+
+  it("refuses a webhook URL that is not Slack or Discord, or that fails a test message", async () => {
+    const admin = await setUpAdmin();
+    const other = await passkeyAction(admin, ...admin_("/policy"), {
+      min_approvals: "1",
+      notify_url: "https://evil.test/hook",
+    });
+    expect(await other.json()).toEqual({ error: "Enter a Slack or Discord webhook URL" });
+    hook(SLACK, 404);
+    const refused = await passkeyAction(admin, ...admin_("/policy"), {
+      min_approvals: "1",
+      notify_url: SLACK,
+    });
+    expect(await refused.json()).toEqual({
+      error: "The webhook refused a test message: the webhook returned HTTP 404",
+    });
+    const page = await (await call(`/admin/${REPO}`, { cookie: admin.cookie })).text();
+    expect(page).toContain('name="notify_url" value=""');
+  });
+
+  it("keeps releasing when the webhook is down, and stops posting once cleared", async () => {
+    const admin = await setUpAdmin();
+    const posts = hook(SLACK);
+    await setPolicy(admin, { notify_url: SLACK });
+    hook(SLACK, 500);
+    await pendingRequest();
+    const failed = await env.DB.prepare(
+      "SELECT details_json FROM audit_log WHERE action = 'notification.failed'",
+    ).first<{ details_json: string }>();
+    expect(failed?.details_json).toContain("HTTP 500");
+    await setPolicy(admin, { notify_url: "" });
+    expect(posts()).toHaveLength(3);
+  });
 });

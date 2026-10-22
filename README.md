@@ -55,6 +55,10 @@ Each repository has a policy that admins edit in the UI. Every change requires a
 | `min_approvals` | `1` | Distinct approvers needed before the job is released. |
 | `prevent_self_review` | on | Whoever started the deployment can't approve it: the tag pusher, the run's `actor` and its `triggering_actor` (re-runs). They can still reject. |
 | `require_default_branch` | on | The tagged commit must be on the default branch. |
+| `notify_url` | none | A Slack or Discord incoming webhook. It gets a message when a release waits for approval, when a decision reaches GitHub or fails to, and when the policy or the approvers change. |
+
+A release you didn't start waiting for approval is the first sign of a stolen token, so set up notifications in a
+channel your maintainers read.
 
 Approvers are an explicit allowlist per repository. GitHub permissions are used once: the first admin of a repository
 must be one of its admins on GitHub, who could remove the protection rule anyway. After that, a repository grows only by

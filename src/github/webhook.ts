@@ -6,6 +6,7 @@ import { type ApprovalRequest, getRequest, insertRequest, markPending } from "@/
 import type { AppEnv, Env } from "@/env";
 import { installationToken } from "@/github/app";
 import { decide, parseCallbackUrl } from "@/github/callback";
+import { alert } from "@/notify";
 import { checkRequest } from "@/policy";
 
 type DeploymentProtectionRule = {
@@ -86,7 +87,7 @@ async function evaluate(env: Env, id: string, defaultBranch: string): Promise<vo
       const check = await checkRequest(token, request, policy, defaultBranch);
       if ("initiatorIds" in check) {
         await markPending(env.DB, id, check.initiatorIds);
-        await audit(env.DB, { action: "request.pending", repo, requestId: id });
+        await alert(env, { action: "request.pending", repo, requestId: id });
         return;
       }
       violation = check.violation;

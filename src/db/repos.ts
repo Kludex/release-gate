@@ -6,6 +6,7 @@ export type RepoPolicy = {
   min_approvals: number;
   prevent_self_review: number;
   require_default_branch: number;
+  notify_url: string | null;
 };
 
 export type Approver = {
@@ -56,14 +57,21 @@ export async function setPolicyInstallation(
 export async function updatePolicy(
   db: D1Database,
   repo: string,
-  policy: Pick<RepoPolicy, "min_approvals" | "prevent_self_review" | "require_default_branch">,
+  policy: Omit<RepoPolicy, "repo_full_name" | "installation_id">,
 ): Promise<void> {
   await db
     .prepare(
-      `UPDATE repo_policies SET min_approvals = ?, prevent_self_review = ?, require_default_branch = ?
+      `UPDATE repo_policies SET min_approvals = ?, prevent_self_review = ?, require_default_branch = ?,
+         notify_url = ?
        WHERE repo_full_name = ?`,
     )
-    .bind(policy.min_approvals, policy.prevent_self_review, policy.require_default_branch, repo)
+    .bind(
+      policy.min_approvals,
+      policy.prevent_self_review,
+      policy.require_default_branch,
+      policy.notify_url,
+      repo,
+    )
     .run();
 }
 
