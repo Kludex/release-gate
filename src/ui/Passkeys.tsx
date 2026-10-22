@@ -53,6 +53,12 @@ export const Passkeys = ({ credentials }: Props) => (
           ))}
         </ul>
       )}
+      {credentials.length === 1 && (
+        <p class="mt-6 max-w-[60ch] text-lg text-grey-600">
+          To remove this passkey, add another one first. Adding a passkey needs an existing one, so
+          release-gate keeps your last.
+        </p>
+      )}
     </Section>
     {credentials.length > 0 && (
       <Section title="Add a passkey">
