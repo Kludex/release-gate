@@ -127,7 +127,7 @@ const STEPS = [
   ["A passkey releases it", "Touch ID or a security key. A stolen token is not enough."],
 ];
 
-export const SignIn = () => (
+export const Home = ({ signedIn }: { signedIn: boolean }) => (
   <>
     <div class="grid items-center gap-12 pt-10 lg:grid-cols-[1fr_20rem] lg:pt-16">
       <div class="space-y-8">
@@ -142,11 +142,17 @@ export const SignIn = () => (
           Releases on protected environments wait here until an approver confirms with a passkey.
         </p>
         <a
-          href="/auth/login"
+          href={signedIn ? "/releases" : "/auth/login"}
           class="inline-flex items-center gap-3 rounded-full border-2 border-black bg-black px-6 py-3 text-lg font-semibold text-white transition hover:-rotate-2 hover:bg-yellow hover:text-black motion-reduce:hover:rotate-0"
         >
-          <GitHubIcon class="size-5" />
-          Sign in with GitHub
+          {signedIn ? (
+            "Open your releases"
+          ) : (
+            <>
+              <GitHubIcon class="size-5" />
+              Sign in with GitHub
+            </>
+          )}
         </a>
       </div>
       <Padlock class="mx-auto w-60 rotate-6 lg:w-full" />

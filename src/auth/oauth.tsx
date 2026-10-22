@@ -62,7 +62,7 @@ oauth.get("/callback", async (c) => {
   await startSession(c, { id, login });
   await audit(c.env.DB, { actor: { id, login }, action: "session.created" });
   // A same-site navigation, so the browser sends the new Strict cookie.
-  return c.html(<Redirect to="/" />);
+  return c.html(<Redirect to="/releases" />);
 });
 
 oauth.post("/logout", (c) => {

@@ -8,7 +8,7 @@ type Page = "requests" | "passkeys" | "audit";
 type Props = { title: string; user: User | null; page?: Page; children: Child };
 
 const NAV: [Page, string, string][] = [
-  ["requests", "/", "Releases"],
+  ["requests", "/releases", "Releases"],
   ["passkeys", "/passkeys", "Passkeys"],
   ["audit", "/audit", "Audit log"],
 ];

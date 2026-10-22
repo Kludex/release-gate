@@ -27,19 +27,22 @@ import { currentUser, fail, jsonBody } from "@/http";
 import { voteViolation } from "@/policy";
 import { Layout } from "@/ui/Layout";
 import { RequestDetail } from "@/ui/RequestDetail";
-import { displayRef, RequestList, SignIn } from "@/ui/RequestList";
+import { displayRef, Home, RequestList } from "@/ui/RequestList";
 
 export const requests = new Hono<AppEnv>();
 
-requests.get("/", async (c) => {
+requests.get("/", (c) => {
   const user = c.get("user");
-  if (!user) {
-    return c.html(
-      <Layout title="Sign in" user={null}>
-        <SignIn />
-      </Layout>,
-    );
-  }
+  return c.html(
+    <Layout title="Every release waits for a passkey" user={user}>
+      <Home signedIn={user !== null} />
+    </Layout>,
+  );
+});
+
+requests.get("/releases", async (c) => {
+  const user = c.get("user");
+  if (!user) return c.redirect("/");
   const [open, recent, repos, claimable, passkeys] = await Promise.all([
     listRequestsForApprover(c.env.DB, user.id, true),
     listRequestsForApprover(c.env.DB, user.id, false),

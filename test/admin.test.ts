@@ -92,7 +92,7 @@ it("shows the audit log to admins", async () => {
 it("lists requests and shows their details", async () => {
   const admin = await setUpAdmin();
   const id = await pendingRequest();
-  const home = await (await call("/", { cookie: admin.cookie })).text();
+  const home = await (await call("/releases", { cookie: admin.cookie })).text();
   expect(home).toContain(`/requests/${id}`);
 
   const detail = await (await call(`/requests/${id}`, { cookie: admin.cookie })).text();
@@ -137,7 +137,7 @@ it("still renders a request when the tag list is unavailable", async () => {
 });
 
 it("tells users without repositories how to join", async () => {
-  const page = await (await call("/", { cookie: await signIn(BOB) })).text();
+  const page = await (await call("/releases", { cookie: await signIn(BOB) })).text();
   expect(page).toContain("You are not an approver for any repository");
 });
 

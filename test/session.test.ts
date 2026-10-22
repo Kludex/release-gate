@@ -1,7 +1,7 @@
 import { expect, it, vi } from "vitest";
 import { ADMIN, BOB, call, cookie, ORIGIN, setUpAdmin, signIn } from "./helpers";
 
-const home = async (session: string) => (await call("/", { cookie: session })).text();
+const home = async (session: string) => (await call("/releases", { cookie: session })).text();
 const admin = (full_name: string) => ({ full_name, permissions: { admin: true } });
 
 it("offers the installed repositories a user administers on GitHub", async () => {
@@ -42,7 +42,7 @@ it("refreshes the list on every sign-in", async () => {
 
 it("signs in with GitHub and shows the dashboard", async () => {
   const session = await signIn(ADMIN);
-  const page = await call("/", { cookie: session });
+  const page = await call("/releases", { cookie: session });
   expect(await page.text()).toContain("@admin");
 });
 
@@ -111,6 +111,13 @@ it("ignores a tampered session cookie", async () => {
   expect(response.status).toBe(401);
 });
 
+it("shows the home page whether or not you are signed in", async () => {
+  expect(await (await call("/")).text()).toContain('href="/auth/login"');
+  const page = await (await call("/", { cookie: await signIn(ADMIN) })).text();
+  expect(page).toContain("Open your releases");
+  expect(page).toContain("@admin");
+});
+
 it("expires sessions after 12 hours", async () => {
   const session = await signIn(ADMIN);
   vi.useFakeTimers({ toFake: ["Date"], now: Date.now() + 12 * 60 * 60 * 1000 + 1 });
@@ -148,7 +155,14 @@ it("sets security headers on every response", async () => {
 });
 
 it("redirects anonymous visitors to the sign-in page", async () => {
-  for (const path of ["/passkeys", "/invite", "/audit", "/admin/acme/widgets", "/requests/x"]) {
+  for (const path of [
+    "/releases",
+    "/passkeys",
+    "/invite",
+    "/audit",
+    "/admin/acme/widgets",
+    "/requests/x",
+  ]) {
     const response = await call(path);
     expect(response.headers.get("Location"), path).toBe("/");
   }

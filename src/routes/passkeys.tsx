@@ -90,5 +90,5 @@ passkeys.post("/passkeys/register/verify", async (c) => {
     repo: invite.repo_full_name,
     details: { role: invite.role },
   });
-  return c.json({ redirect: "/" });
+  return c.json({ redirect: "/releases" });
 });
