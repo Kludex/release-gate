@@ -18,9 +18,7 @@
   "vars": {
     // The exact origin users visit. Passkeys are bound to its hostname.
     "PUBLIC_ORIGIN": "https://release-gate.marcelotryle.com",
-    "RP_NAME": "release-gate",
-    // Comma-separated repos whose admin is created by the bootstrap code.
-    "BOOTSTRAP_REPOS": "Kludex/release-gate-sandbox"
+    "RP_NAME": "release-gate"
   },
   "observability": { "enabled": true }
 }

@@ -1,7 +1,7 @@
 import type { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
-import type { AppEnv, User } from "@/env";
+import type { AppEnv, Env, User } from "@/env";
 
 export type Body = Record<string, unknown>;
 
@@ -27,6 +27,10 @@ export function currentUser(c: Context<AppEnv>): User {
   const user = c.get("user");
   if (!user) fail(401, "Sign in with GitHub first");
   return user;
+}
+
+export function isOwner(env: Env, user: User): boolean {
+  return String(user.id) === env.OWNER_GITHUB_ID;
 }
 
 export function randomToken(bytes = 20): string {

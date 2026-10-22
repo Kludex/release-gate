@@ -39,7 +39,7 @@ jobs:
 - [ ] Install it on `Kludex/release-gate-sandbox` only.
 - [ ] In the sandbox, open **Settings → Environments → `gated`** and enable release-gate under **Deployment
       protection rules**.
-- [ ] Open `PUBLIC_ORIGIN/bootstrap`, enter the bootstrap code and register your passkey.
+- [ ] Open `PUBLIC_ORIGIN/setup`, register your passkey, then add the repository on the home page.
 
 ## 4. Sandbox tests
 
@@ -56,7 +56,7 @@ jobs:
 
 ## 5. Starlette
 
-- [ ] Add `Kludex/starlette` to `BOOTSTRAP_REPOS`, or invite yourself as an admin from an existing admin account.
+- [ ] Add `Kludex/starlette` on the home page.
 - [ ] Install the app on `Kludex/starlette`.
 - [ ] In **Settings → Environments → `pypi`**, enable release-gate. Keep the existing required reviewer for the first
       release.

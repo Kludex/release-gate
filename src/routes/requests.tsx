@@ -16,7 +16,7 @@ import type { AppEnv, Env, User } from "@/env";
 import { installationToken } from "@/github/app";
 import { decide, deliver } from "@/github/callback";
 import { previousTag, tagName } from "@/github/repo";
-import { currentUser, fail, jsonBody } from "@/http";
+import { currentUser, fail, isOwner, jsonBody } from "@/http";
 import { voteViolation } from "@/policy";
 import { Layout } from "@/ui/Layout";
 import { RequestDetail } from "@/ui/RequestDetail";
@@ -40,7 +40,13 @@ requests.get("/", async (c) => {
   ]);
   return c.html(
     <Layout title="Requests" user={user} page="requests">
-      <RequestList login={user.login} open={open} recent={recent} repos={repos} />
+      <RequestList
+        login={user.login}
+        owner={isOwner(c.env, user)}
+        open={open}
+        recent={recent}
+        repos={repos}
+      />
     </Layout>,
   );
 });

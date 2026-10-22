@@ -2,9 +2,11 @@ import type { ApprovalRequest } from "@/db/requests";
 import { Blob, GitHubIcon } from "@/ui/Icons";
 import { Padlock } from "@/ui/Illustration";
 import { Empty, formatTime, link, meta, PageTitle, Section, Tag } from "@/ui/Layout";
+import { Field, inputClass, PasskeyForm } from "@/ui/PasskeyForm";
 
 type Props = {
   login: string;
+  owner: boolean;
   open: ApprovalRequest[];
   recent: ApprovalRequest[];
   repos: string[];
@@ -55,7 +57,7 @@ const List = ({ requests, empty }: { requests: ApprovalRequest[]; empty: string 
     </ul>
   );
 
-export const RequestList = ({ login, open, recent, repos }: Props) => (
+export const RequestList = ({ login, owner, open, recent, repos }: Props) => (
   <>
     <PageTitle
       title="Releases"
@@ -63,12 +65,24 @@ export const RequestList = ({ login, open, recent, repos }: Props) => (
     />
     {repos.length === 0 && (
       <p class="mt-10 max-w-[60ch] rounded-3xl bg-cream px-6 py-5 text-xl">
-        You are not an approver for any repository. Ask an admin for an invite code and enter it on
-        the{" "}
-        <a href="/invite" class={link}>
-          invite page
-        </a>
-        .
+        {owner ? (
+          <>
+            You own this release-gate. If you have no passkey yet,{" "}
+            <a href="/setup" class={link}>
+              register your first one
+            </a>
+            . Then add a repository below.
+          </>
+        ) : (
+          <>
+            You are not an approver for any repository. Ask an admin for an invite code and enter it
+            on the{" "}
+            <a href="/invite" class={link}>
+              invite page
+            </a>
+            .
+          </>
+        )}
       </p>
     )}
     <Section title="Waiting for a decision">
@@ -88,6 +102,24 @@ export const RequestList = ({ login, open, recent, repos }: Props) => (
             </li>
           ))}
         </ul>
+      </Section>
+    )}
+    {owner && (
+      <Section title="Add a repository">
+        <PasskeyForm action="/repos" challenge="/repos/challenge" label="Add repository">
+          <Field label="Repository">
+            <input
+              name="repo"
+              required
+              class={`${inputClass} max-w-md font-mono`}
+              placeholder="Kludex/starlette"
+            />
+          </Field>
+        </PasskeyForm>
+        <p class="mt-4 max-w-[60ch] text-lg">
+          You become its admin. Use the exact owner/name casing from GitHub, and install the app on
+          it.
+        </p>
       </Section>
     )}
   </>

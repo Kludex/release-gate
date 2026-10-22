@@ -7,10 +7,11 @@ import {
 } from "@/auth/webauthn";
 import { audit } from "@/db/audit";
 import { deleteCredential, listCredentials } from "@/db/credentials";
-import { consumeBootstrap, consumeInvite } from "@/db/enrollment";
-import { ensurePolicy, upsertApprover } from "@/db/repos";
+import { consumeInvite } from "@/db/enrollment";
+import { upsertApprover } from "@/db/repos";
 import type { AppEnv } from "@/env";
-import { currentUser, fail, jsonBody, sha256Hex, stringField } from "@/http";
+import { currentUser, fail, jsonBody, stringField } from "@/http";
+import { requireSetup } from "@/routes/enroll";
 import { Layout } from "@/ui/Layout";
 import { Passkeys } from "@/ui/Passkeys";
 
@@ -62,27 +63,10 @@ passkeys.post("/passkeys/register/verify", async (c) => {
     return c.json({ redirect: "/passkeys" });
   }
 
-  if (purpose === "bootstrap") {
-    if (!(await consumeBootstrap(db, await sha256Hex(c.env.BOOTSTRAP_CODE)))) {
-      fail(403, "This bootstrap code was already used");
-    }
-    const repos = c.env.BOOTSTRAP_REPOS.split(",")
-      .map((repo) => repo.trim())
-      .filter(Boolean);
-    const admin = {
-      github_user_id: user.id,
-      login: user.login,
-      role: "admin",
-      added_by: null,
-    } as const;
-    await db.batch([
-      save,
-      ...repos.flatMap((repo) => [
-        ensurePolicy(db, repo),
-        upsertApprover(db, { ...admin, repo_full_name: repo }),
-      ]),
-    ]);
-    for (const repo of repos) await audit(db, { actor: user, action: "bootstrap.used", repo });
+  if (purpose === "setup") {
+    await requireSetup(c.env, user);
+    await save.run();
+    await audit(db, { actor: user, action: "owner.setup" });
     return c.json({ redirect: "/" });
   }
 

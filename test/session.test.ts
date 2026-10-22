@@ -1,5 +1,5 @@
 import { expect, it, vi } from "vitest";
-import { ADMIN, bootstrapAdmin, call, cookie, ORIGIN, signIn } from "./helpers";
+import { ADMIN, call, cookie, ORIGIN, ownerAdmin, signIn } from "./helpers";
 
 it("signs in with GitHub and shows the dashboard", async () => {
   const session = await signIn(ADMIN);
@@ -87,7 +87,7 @@ it.each([
   ["a foreign", "https://evil.test"],
   ["a missing", null],
 ])("blocks POSTs with %s Origin", async (_, origin) => {
-  const admin = await bootstrapAdmin();
+  const admin = await ownerAdmin();
   const response = await call("/passkeys/challenge", { cookie: admin.cookie, body: {}, origin });
   expect(response.status).toBe(403);
 });
@@ -110,7 +110,7 @@ it("sets security headers on every response", async () => {
 it("redirects anonymous visitors to the sign-in page", async () => {
   for (const path of [
     "/passkeys",
-    "/bootstrap",
+    "/setup",
     "/invite",
     "/audit",
     "/admin/acme/widgets",
@@ -122,11 +122,11 @@ it("redirects anonymous visitors to the sign-in page", async () => {
 });
 
 it("rejects a non-JSON body", async () => {
-  const admin = await bootstrapAdmin();
-  const response = await call("/bootstrap", { cookie: admin.cookie, body: "[]" });
+  const admin = await ownerAdmin();
+  const response = await call("/invite", { cookie: admin.cookie, body: "[]" });
   expect(await response.json()).toEqual({ error: "Expected a JSON object" });
-  const broken = await call("/bootstrap", { cookie: admin.cookie, body: "{" });
+  const broken = await call("/invite", { cookie: admin.cookie, body: "{" });
   expect(await broken.json()).toEqual({ error: "Expected a JSON object" });
-  const missing = await call("/bootstrap", { cookie: admin.cookie, body: {} });
+  const missing = await call("/invite", { cookie: admin.cookie, body: {} });
   expect(await missing.json()).toEqual({ error: "Missing field: code" });
 });

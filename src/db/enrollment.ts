@@ -10,22 +10,6 @@ export type Invite = {
   used_at: number | null;
 };
 
-export async function isBootstrapUsed(db: D1Database, codeHash: string): Promise<boolean> {
-  const row = await db
-    .prepare("SELECT 1 FROM bootstrap WHERE code_hash = ?")
-    .bind(codeHash)
-    .first();
-  return row !== null;
-}
-
-export async function consumeBootstrap(db: D1Database, codeHash: string): Promise<boolean> {
-  const result = await db
-    .prepare("INSERT INTO bootstrap (code_hash, used_at) VALUES (?, ?) ON CONFLICT DO NOTHING")
-    .bind(codeHash, Date.now())
-    .run();
-  return result.meta.changes === 1;
-}
-
 export async function insertInvite(db: D1Database, invite: Omit<Invite, "used_at">): Promise<void> {
   await db
     .prepare(

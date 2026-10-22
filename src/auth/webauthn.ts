@@ -21,7 +21,7 @@ import type { Env, User } from "@/env";
 import { type Body, fail, stringField } from "@/http";
 
 const CHALLENGE_TTL_MS = 5 * 60 * 1000;
-const REGISTRATION_PURPOSE = /^(register|bootstrap|invite:[0-9a-f]{64})$/;
+const REGISTRATION_PURPOSE = /^(register|setup|invite:[0-9a-f]{64})$/;
 
 export type Ceremony = { challengeId: string; options: unknown };
 

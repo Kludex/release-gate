@@ -4,10 +4,10 @@ import {
   ALICE,
   addMember,
   BOB,
-  bootstrapAdmin,
   call,
   latestRequest,
   type Member,
+  ownerAdmin,
   PUSHER,
   passkeyAction,
   pendingRequest,
@@ -37,7 +37,7 @@ async function decide(member: Member, id: string, ceremony: Awaited<ReturnType<t
 }
 
 it("approves through the callback after a passkey check", async () => {
-  const admin = await bootstrapAdmin();
+  const admin = await ownerAdmin();
   const id = await pendingRequest();
   const response = await vote(admin, id, "approve");
   expect(await response.json()).toEqual({ redirect: `/requests/${id}` });
@@ -48,7 +48,7 @@ it("approves through the callback after a passkey check", async () => {
 });
 
 it("rejects through the callback", async () => {
-  const admin = await bootstrapAdmin();
+  const admin = await ownerAdmin();
   const id = await pendingRequest();
   await vote(admin, id, "reject");
   expect(github.callbacks()).toEqual([
@@ -60,7 +60,7 @@ it("rejects through the callback", async () => {
 
 describe("challenge validation", () => {
   it("refuses an expired challenge", async () => {
-    const admin = await bootstrapAdmin();
+    const admin = await ownerAdmin();
     const id = await pendingRequest();
     const ceremony = await challenge(admin, id);
     vi.useFakeTimers({ toFake: ["Date"], now: Date.now() + 6 * 60 * 1000 });
@@ -71,7 +71,7 @@ describe("challenge validation", () => {
   });
 
   it("refuses a reused challenge", async () => {
-    const admin = await bootstrapAdmin();
+    const admin = await ownerAdmin();
     const id = await pendingRequest();
     const ceremony = await challenge(admin, id, "reject");
     const assertion = await admin.passkey.authenticate(ceremony.options);
@@ -85,7 +85,7 @@ describe("challenge validation", () => {
   });
 
   it("refuses a challenge issued for another request", async () => {
-    const admin = await bootstrapAdmin();
+    const admin = await ownerAdmin();
     const first = await pendingRequest();
     await sendWebhook(protectionRule());
     const second = (await latestRequest()).id;
@@ -96,7 +96,7 @@ describe("challenge validation", () => {
   });
 
   it("refuses a challenge issued for another action", async () => {
-    const admin = await bootstrapAdmin();
+    const admin = await ownerAdmin();
     const id = await pendingRequest();
     const ceremony = await call("/passkeys/challenge", { cookie: admin.cookie, body: {} });
     const response = await decide(admin, id, await ceremony.json());
@@ -106,7 +106,7 @@ describe("challenge validation", () => {
   });
 
   it("refuses a passkey that belongs to another user", async () => {
-    const admin = await bootstrapAdmin();
+    const admin = await ownerAdmin();
     const alice = await addMember(admin, ALICE);
     const id = await pendingRequest();
     const ceremony = await challenge(admin, id);
@@ -117,16 +117,17 @@ describe("challenge validation", () => {
   });
 
   it("refuses an invalid signature", async () => {
-    const admin = await bootstrapAdmin();
+    const admin = await ownerAdmin();
     const id = await pendingRequest();
     const ceremony = await challenge(admin, id);
     const impostor = await admin.passkey.impostor();
+    impostor.counter = admin.passkey.counter;
     const response = await decide({ ...admin, passkey: impostor }, id, ceremony);
     expect(await response.json()).toEqual({ error: "Passkey check failed" });
   });
 
   it("refuses a signature counter that goes backwards", async () => {
-    const admin = await bootstrapAdmin();
+    const admin = await ownerAdmin();
     const id = await pendingRequest();
     await vote(admin, id, "reject");
     const next = await pendingRequest();
@@ -137,7 +138,7 @@ describe("challenge validation", () => {
   });
 
   it("refuses a request without an assertion", async () => {
-    const admin = await bootstrapAdmin();
+    const admin = await ownerAdmin();
     const id = await pendingRequest();
     const response = await call(`/requests/${id}/decision`, {
       cookie: admin.cookie,
@@ -147,7 +148,7 @@ describe("challenge validation", () => {
   });
 
   it("refuses an unknown action", async () => {
-    const admin = await bootstrapAdmin();
+    const admin = await ownerAdmin();
     const id = await pendingRequest();
     const response = await call(`/requests/${id}/challenge`, {
       cookie: admin.cookie,
@@ -159,7 +160,7 @@ describe("challenge validation", () => {
 
 describe("approvers", () => {
   it("hides requests from non-approvers", async () => {
-    await bootstrapAdmin();
+    await ownerAdmin();
     const id = await pendingRequest();
     const cookie = await signIn(BOB);
     const response = await call(`/requests/${id}/challenge`, {
@@ -171,7 +172,7 @@ describe("approvers", () => {
   });
 
   it("allows one vote per user", async () => {
-    const admin = await bootstrapAdmin();
+    const admin = await ownerAdmin();
     await setPolicy(admin, { min_approvals: "2" });
     const id = await pendingRequest();
     expect((await vote(admin, id, "approve")).status).toBe(200);
@@ -181,7 +182,7 @@ describe("approvers", () => {
   });
 
   it("fires the callback only after the second distinct approval", async () => {
-    const admin = await bootstrapAdmin();
+    const admin = await ownerAdmin();
     const alice = await addMember(admin, ALICE);
     await setPolicy(admin, { min_approvals: "2" });
     const id = await pendingRequest();
@@ -201,7 +202,7 @@ describe("approvers", () => {
   });
 
   it("refuses votes once the request is decided", async () => {
-    const admin = await bootstrapAdmin();
+    const admin = await ownerAdmin();
     const alice = await addMember(admin, ALICE);
     const id = await pendingRequest();
     const late = await challenge(alice, id, "reject");
@@ -214,7 +215,7 @@ describe("approvers", () => {
   });
 
   it("sends one callback when approvals race", async () => {
-    const admin = await bootstrapAdmin();
+    const admin = await ownerAdmin();
     const alice = await addMember(admin, ALICE);
     const id = await pendingRequest();
     const [a, b] = [await challenge(admin, id), await challenge(alice, id)];
@@ -225,7 +226,7 @@ describe("approvers", () => {
 
 describe("prevent_self_review", () => {
   it("stops the tag pusher from approving", async () => {
-    const admin = await bootstrapAdmin();
+    const admin = await ownerAdmin();
     const pusher = await addMember(admin, PUSHER);
     const id = await pendingRequest();
     const response = await vote(pusher, id, "approve");
@@ -236,21 +237,21 @@ describe("prevent_self_review", () => {
   });
 
   it("stops whoever re-ran the workflow from approving", async () => {
-    const admin = await bootstrapAdmin();
+    const admin = await ownerAdmin();
     const alice = await addMember(admin, ALICE);
     const id = await pendingRequest({ initiators: [PUSHER.id, ALICE.id] });
     expect((await vote(alice, id, "approve")).status).toBe(403);
   });
 
   it("still lets the initiator reject", async () => {
-    const admin = await bootstrapAdmin();
+    const admin = await ownerAdmin();
     const pusher = await addMember(admin, PUSHER);
     const id = await pendingRequest();
     expect((await vote(pusher, id, "reject")).status).toBe(200);
   });
 
   it("allows self-approval when the policy turns it off", async () => {
-    const admin = await bootstrapAdmin();
+    const admin = await ownerAdmin();
     const pusher = await addMember(admin, PUSHER);
     await setPolicy(admin, { prevent_self_review: "0" });
     const id = await pendingRequest();
@@ -261,7 +262,7 @@ describe("prevent_self_review", () => {
 
 describe("failed callbacks", () => {
   it("leaves the request in error until an admin retries", async () => {
-    const admin = await bootstrapAdmin();
+    const admin = await ownerAdmin();
     const id = await pendingRequest({ callbackStatus: 500 });
     await vote(admin, id, "approve");
     expect(await latestRequest()).toMatchObject({ status: "error", decision: "approved" });
@@ -281,7 +282,7 @@ describe("failed callbacks", () => {
   });
 
   it("runs only one of two concurrent retries", async () => {
-    const admin = await bootstrapAdmin();
+    const admin = await ownerAdmin();
     const id = await pendingRequest({ callbackStatus: 500 });
     await vote(admin, id, "approve");
     releaseRoutes();
@@ -302,7 +303,7 @@ describe("failed callbacks", () => {
   });
 
   it("lets an admin resend a delivery whose worker never finished", async () => {
-    const admin = await bootstrapAdmin();
+    const admin = await ownerAdmin();
     const id = await pendingRequest();
     let finish = () => {};
     const hung = new Promise<void>((resolve) => {
@@ -339,7 +340,7 @@ describe("failed callbacks", () => {
   });
 
   it("records a failed installation token request as an error", async () => {
-    const admin = await bootstrapAdmin();
+    const admin = await ownerAdmin();
     const id = await pendingRequest();
     github.on(
       "POST",

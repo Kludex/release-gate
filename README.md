@@ -57,7 +57,7 @@ holder could change those.
 
 ## Documentation
 
-- [Self-hosting](docs/self-hosting.md): create the GitHub App, deploy to Cloudflare, bootstrap the first admin.
+- [Self-hosting](docs/self-hosting.md): create the GitHub App, deploy to Cloudflare, set up the owner.
 - [Threat model](docs/threat-model.md): what release-gate protects against, and what it doesn't.
 - [Rollout checklist](docs/rollout.md): the sandbox test and the Starlette rollout.
 - [Security policy](SECURITY.md)

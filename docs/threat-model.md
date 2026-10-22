@@ -6,7 +6,7 @@ release-gate makes a release need two things: a tag push, and a fresh passkey as
 
 | Threat | Why it fails |
 | --- | --- |
-| A stolen GitHub personal access token or OAuth token | The token can push a tag, but it can't answer a custom protection rule. Only the app can. The app needs a WebAuthn assertion, and a token can't register a passkey either: the first passkey needs a bootstrap or invite code, and later ones need an existing passkey. |
+| A stolen GitHub personal access token or OAuth token | The token can push a tag, but it can't answer a custom protection rule. Only the app can. The app needs a WebAuthn assertion, and a token can't register a passkey either: the first passkey needs an invite code, and later ones need an existing passkey. The only exception is the owner, before their first passkey: deploy and set up right away. |
 | API-only approvals | Approving required reviewers through the REST API has no effect on the release-gate rule. |
 | A malicious workflow change that keeps the environment | The job still pauses at the environment, and a human reviews the run and the diff before approving. |
 | Releasing from a branch, a pull request or a commit outside the default branch | Auto-rejected: the deployment ref must be a tag that points to the deployed commit, and by default that commit must be on the default branch. |

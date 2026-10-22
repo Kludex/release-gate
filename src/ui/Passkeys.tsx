@@ -17,10 +17,6 @@ export const Passkeys = ({ credentials }: Props) => (
           You have no passkeys yet. Your first one needs an{" "}
           <a href="/invite" class={link}>
             invite code
-          </a>{" "}
-          or the{" "}
-          <a href="/bootstrap" class={link}>
-            bootstrap code
           </a>
           .
         </Empty>

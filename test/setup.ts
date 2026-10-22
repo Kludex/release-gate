@@ -13,7 +13,6 @@ const TABLES = [
   "approval_votes",
   "challenges",
   "invites",
-  "bootstrap",
   "audit_log",
 ];
 

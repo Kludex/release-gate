@@ -1,10 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 import { API, CALLBACK_URL, github, REPO, releaseRoutes, SHA } from "./github";
-import { bootstrapAdmin, latestRequest, protectionRule, sendWebhook, setPolicy } from "./helpers";
+import { latestRequest, ownerAdmin, protectionRule, sendWebhook, setPolicy } from "./helpers";
 
 describe("signature", () => {
   it("accepts a valid signature and stores a pending request", async () => {
-    await bootstrapAdmin();
+    await ownerAdmin();
     releaseRoutes();
     const response = await sendWebhook(protectionRule());
     expect(response.status).toBe(200);
@@ -35,7 +35,7 @@ it("ignores other events", async () => {
 });
 
 it("treats a duplicate delivery as a no-op", async () => {
-  await bootstrapAdmin();
+  await ownerAdmin();
   releaseRoutes();
   await sendWebhook(protectionRule(), { delivery: "delivery-1" });
   const callsAfterFirst = github.calls.length;
@@ -68,7 +68,7 @@ describe("auto-reject policy", () => {
     ["a branch ref", "refs/heads/main", "`refs/heads/main` is not a tag"],
     ["an empty ref", "", "`` is not a tag"],
   ])("rejects %s", async (_, ref, reason) => {
-    await bootstrapAdmin();
+    await ownerAdmin();
     releaseRoutes();
     await sendWebhook(protectionRule({ deployment: { ref, sha: SHA } }));
     expect(github.callbacks()).toEqual([
@@ -82,7 +82,7 @@ describe("auto-reject policy", () => {
   });
 
   it("rejects a short ref that is not a tag", async () => {
-    await bootstrapAdmin();
+    await ownerAdmin();
     releaseRoutes();
     github.on(
       "GET",
@@ -94,7 +94,7 @@ describe("auto-reject policy", () => {
   });
 
   it("rejects a tag that points to another commit", async () => {
-    await bootstrapAdmin();
+    await ownerAdmin();
     releaseRoutes();
     github.on("GET", `${API}/repos/${REPO}/git/ref/tags/v1.0.0`, {
       object: { type: "commit", sha: "b".repeat(40) },
@@ -104,7 +104,7 @@ describe("auto-reject policy", () => {
   });
 
   it("follows annotated tags to their commit", async () => {
-    await bootstrapAdmin();
+    await ownerAdmin();
     releaseRoutes();
     github.on("GET", `${API}/repos/${REPO}/git/ref/tags/v1.0.0`, {
       object: { type: "tag", sha: "c".repeat(40) },
@@ -117,7 +117,7 @@ describe("auto-reject policy", () => {
   });
 
   it("rejects a commit that is not on the default branch", async () => {
-    await bootstrapAdmin();
+    await ownerAdmin();
     releaseRoutes();
     github.on("GET", `${API}/repos/${REPO}/compare/main...${SHA}?per_page=1`, {
       status: "diverged",
@@ -133,7 +133,7 @@ describe("auto-reject policy", () => {
   });
 
   it("accepts other commits when the default branch is not required", async () => {
-    const admin = await bootstrapAdmin();
+    const admin = await ownerAdmin();
     await setPolicy(admin, { require_default_branch: "0" });
     releaseRoutes();
     github.on("GET", `${API}/repos/${REPO}/compare/main...${SHA}?per_page=1`, {
@@ -152,7 +152,7 @@ describe("auto-reject policy", () => {
   });
 
   it("rejects when GitHub cannot be reached during the checks", async () => {
-    await bootstrapAdmin();
+    await ownerAdmin();
     releaseRoutes();
     github.on(
       "GET",

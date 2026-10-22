@@ -69,12 +69,8 @@ export async function register(member: Member, registration: Ceremony): Promise<
   });
 }
 
-/** Signs in and registers a first passkey through `/bootstrap` or `/invite`. */
-export async function enroll(
-  user: User,
-  path: "/bootstrap" | "/invite",
-  code: string,
-): Promise<Member> {
+/** Signs in and registers a first passkey through `/setup` or `/invite`. */
+export async function enroll(user: User, path: "/setup" | "/invite", code = ""): Promise<Member> {
   const member = { user, cookie: await signIn(user), passkey: await Authenticator.create() };
   const response = await call(path, { cookie: member.cookie, body: { code } });
   if (!response.ok) throw new Error(`Enrollment failed: ${await response.text()}`);
@@ -84,7 +80,13 @@ export async function enroll(
   return member;
 }
 
-export const bootstrapAdmin = (): Promise<Member> => enroll(ADMIN, "/bootstrap", "bootstrap-code");
+/** Sets up the owner, who adds `REPO` and becomes its admin. */
+export async function ownerAdmin(): Promise<Member> {
+  const owner = await enroll(ADMIN, "/setup");
+  const response = await passkeyAction(owner, "/repos/challenge", "/repos", { repo: REPO });
+  if (!response.ok) throw new Error(`Adding the repo failed: ${await response.text()}`);
+  return owner;
+}
 
 /** Runs the same challenge, assertion and submit sequence as `client/webauthn.ts`. */
 export async function passkeyAction(

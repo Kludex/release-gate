@@ -3,6 +3,7 @@ import { authenticationChallenge, verifyAuthentication } from "@/auth/webauthn";
 import { audit, listAudit } from "@/db/audit";
 import { insertInvite, listOpenInvites } from "@/db/enrollment";
 import {
+  ensurePolicy,
   getApprover,
   getPolicy,
   listAdminRepos,
@@ -10,12 +11,14 @@ import {
   type RepoPolicy,
   removeApprover,
   updatePolicy,
+  upsertApprover,
 } from "@/db/repos";
 import type { AppEnv, User } from "@/env";
 import {
   type Body,
   currentUser,
   fail,
+  isOwner,
   jsonBody,
   randomToken,
   sha256Hex,
@@ -27,8 +30,34 @@ import { Layout } from "@/ui/Layout";
 
 const INVITE_TTL_MS = 24 * 60 * 60 * 1000;
 const LOGIN = /^[A-Za-z0-9-]{1,39}$/;
+const REPO = /^[A-Za-z0-9-]{1,39}\/[A-Za-z0-9._-]{1,100}$/;
 
 export const admin = new Hono<AppEnv>();
+
+admin.post("/repos/challenge", async (c) => {
+  return c.json(await authenticationChallenge(c.env, requireOwner(c), "add-repo"));
+});
+
+admin.post("/repos", async (c) => {
+  const user = requireOwner(c);
+  const body = await jsonBody(c);
+  const repo = stringField(body, "repo").trim();
+  if (!REPO.test(repo)) fail(400, "Enter the repository as owner/name");
+  await verifyAuthentication(c.env, user, body, ["add-repo"]);
+  const db = c.env.DB;
+  await db.batch([
+    ensurePolicy(db, repo),
+    upsertApprover(db, {
+      repo_full_name: repo,
+      github_user_id: user.id,
+      login: user.login,
+      role: "admin",
+      added_by: null,
+    }),
+  ]);
+  await audit(db, { actor: user, action: "repo.added", repo });
+  return c.json({ redirect: `/admin/${repo}` });
+});
 
 admin.get("/audit", async (c) => {
   const user = c.get("user");
@@ -107,6 +136,12 @@ admin.post("/admin/:owner/:repo/approvers/remove", async (c) => {
   await audit(c.env.DB, { actor: user, action: "approver.removed", repo, details: { userId } });
   return c.json({ redirect: `/admin/${repo}` });
 });
+
+function requireOwner(c: Context<AppEnv>): User {
+  const user = currentUser(c);
+  if (!isOwner(c.env, user)) fail(404, "Not found");
+  return user;
+}
 
 async function requireAdmin(
   c: Context<AppEnv>,

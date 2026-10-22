@@ -36,7 +36,6 @@ pnpm exec wrangler d1 migrations apply release-gate --remote
 | --- | --- | --- |
 | `PUBLIC_ORIGIN` | `https://release-gate.acme.workers.dev` | The exact origin users visit. Requests for any other host get `421`. |
 | `RP_NAME` | `release-gate` | The name authenticators show during registration. |
-| `BOOTSTRAP_REPOS` | `acme/widgets,acme/gadgets` | Repositories whose admin is created by the bootstrap code. |
 
 ## 4. Create the GitHub App
 
@@ -51,7 +50,10 @@ Go to **Settings → Developer settings → GitHub Apps → New GitHub App** on 
 | Webhook secret | `openssl rand -hex 32` |
 | Repository permissions | Deployments: read and write; Actions: read; Contents: read; Metadata: read |
 | Subscribe to events | Deployment protection rule |
-| Where can this app be installed | Any account |
+| Where can this app be installed | Only on this account |
+
+Keep the app private. A public app can be installed by anyone, and their webhooks would reach your worker.
+Create it on the account that owns the repositories, such as your organization.
 
 Then generate a private key. GitHub gives you PKCS#1, but WebCrypto needs PKCS#8:
 
@@ -68,10 +70,14 @@ pnpm exec wrangler secret put GITHUB_WEBHOOK_SECRET
 pnpm exec wrangler secret put GITHUB_CLIENT_ID
 pnpm exec wrangler secret put GITHUB_CLIENT_SECRET
 openssl rand -hex 32 | pnpm exec wrangler secret put SESSION_SECRET
-openssl rand -hex 32 | tee /dev/tty | pnpm exec wrangler secret put BOOTSTRAP_CODE
+gh api users/<your-login> --jq .id | pnpm exec wrangler secret put OWNER_GITHUB_ID
 ```
 
-Keep the printed bootstrap code for step 7, then delete the `.pem` files.
+`OWNER_GITHUB_ID` is the numeric id of the GitHub user who sets up release-gate. A login can be renamed and
+reclaimed by someone else, an id can't. It isn't sensitive, but as a secret it stays out of `wrangler.jsonc`, so
+forks don't inherit it.
+
+Delete the `.pem` files.
 
 ## 6. Deploy
 
@@ -81,12 +87,18 @@ pnpm run deploy
 
 Deploys are manual. CI never holds Cloudflare credentials.
 
-## 7. Bootstrap the first admin
+## 7. Set up the owner
 
-1. Open `PUBLIC_ORIGIN` and sign in with GitHub.
-2. Go to `PUBLIC_ORIGIN/bootstrap`, enter the bootstrap code and register a passkey.
+1. Open `PUBLIC_ORIGIN` and sign in with GitHub as the owner.
+2. Go to `PUBLIC_ORIGIN/setup` and register your first passkey.
+3. On the home page, add a repository as `owner/name`, with the exact casing GitHub uses. You become its admin.
 
-You become `admin` of every repository in `BOOTSTRAP_REPOS`. The code works once. Its hash is stored in D1.
+`/setup` only works for the owner, and only until they have a passkey. Add more repositories the same way at any
+time.
+
+> [!WARNING]
+> Sign in right after deploying. Until the owner has a passkey, anyone holding a stolen session for the owner's
+> GitHub account could register one first.
 
 ## 8. Protect an environment
 
@@ -95,7 +107,7 @@ You become `admin` of every repository in `BOOTSTRAP_REPOS`. The code works once
 3. Under **Deployment protection rules**, enable release-gate.
 4. Turn off **Allow administrators to bypass configured protection rules**.
 
-A repository that isn't in release-gate's policy table gets every deployment rejected.
+A repository that the owner hasn't added gets every deployment rejected.
 
 ## Adding approvers
 
@@ -121,10 +133,12 @@ away for `error` and after 5 minutes for `delivering`.
 
 ## Recovery
 
-If every passkey is lost, rotate the bootstrap code:
+If the owner loses every passkey, delete their passkeys from D1:
 
 ```sh
-openssl rand -hex 32 | tee /dev/tty | pnpm exec wrangler secret put BOOTSTRAP_CODE
+pnpm exec wrangler d1 execute release-gate --remote \
+  --command "DELETE FROM credentials WHERE github_user_id = <owner-id>"
 ```
 
-Then bootstrap again. This needs access to the Cloudflare account, which is the root of trust for this service.
+Then open `/setup` again. This needs access to the Cloudflare account, which is the root of trust for this service.
+Other approvers who lose every passkey get a new invite from an admin.
