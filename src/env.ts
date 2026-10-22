@@ -9,6 +9,7 @@ export type Env = {
   SESSION_SECRET: string;
   PUBLIC_ORIGIN: string;
   RP_NAME: string;
+  GITHUB_APP_SLUG: string;
 };
 
 export type User = { id: number; login: string };

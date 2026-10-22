@@ -53,6 +53,7 @@ requests.get("/releases", async (c) => {
         recent={recent}
         repos={repos}
         installed={installed}
+        installUrl={`https://github.com/apps/${c.env.GITHUB_APP_SLUG}/installations/new`}
       />
     </Layout>,
   );

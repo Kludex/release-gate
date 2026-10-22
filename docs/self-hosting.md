@@ -36,6 +36,7 @@ pnpm exec wrangler d1 migrations apply release-gate --remote
 | --- | --- | --- |
 | `PUBLIC_ORIGIN` | `https://release-gate.acme.workers.dev` | The exact origin users visit. Requests for any other host get `421`. |
 | `RP_NAME` | `release-gate` | The name authenticators show during registration. |
+| `GITHUB_APP_SLUG` | `acme-release-gate` | The app's slug, from its public page `github.com/apps/<slug>`. The **Install on GitHub** button links there. |
 
 ## 4. Create the GitHub App
 
@@ -46,11 +47,16 @@ Go to **Settings → Developer settings → GitHub Apps → New GitHub App** on 
 | Homepage URL | `PUBLIC_ORIGIN` |
 | Callback URL | `PUBLIC_ORIGIN/auth/callback` |
 | Request user authorization (OAuth) during installation | off |
+| Setup URL | `PUBLIC_ORIGIN/auth/login` |
+| Redirect on update | on |
 | Webhook URL | `PUBLIC_ORIGIN/webhook` |
 | Webhook secret | `openssl rand -hex 32` |
 | Repository permissions | Deployments: read and write; Actions: read; Contents: read; Metadata: read |
 | Subscribe to events | Deployment protection rule |
 | Where can this app be installed | Any account, to host it for others. Only on this account, to keep it to yourself. |
+
+The setup URL brings people back after they install the app, or change which repositories it can access. Signing in
+again refreshes the repositories they can set up.
 
 Then generate a private key. GitHub gives you PKCS#1, but WebCrypto needs PKCS#8:
 
@@ -83,8 +89,8 @@ Deploys are manual. CI never holds Cloudflare credentials.
 
 1. Install the app on the repository.
 2. Open `PUBLIC_ORIGIN`, sign in with GitHub, and pick the repository under **Set up a repository**.
-   The list holds the repositories where you are a GitHub admin and the app is installed, as of your last sign-in.
-   Use **Refresh the list** after installing the app.
+   The list holds the repositories where you are a GitHub admin and the app is installed. **Install on GitHub** adds
+   more.
 3. Register your first passkey, or confirm with an existing one. You become the repository's admin.
 
 Only a GitHub admin of the repository can set it up, and only while nobody else has. After that, people join by

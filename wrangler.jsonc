@@ -18,7 +18,8 @@
   "vars": {
     // The exact origin users visit. Passkeys are bound to its hostname.
     "PUBLIC_ORIGIN": "https://release-gate.marcelotryle.com",
-    "RP_NAME": "release-gate"
+    "RP_NAME": "release-gate",
+    "GITHUB_APP_SLUG": "secure-release-gate"
   },
   "observability": { "enabled": true }
 }

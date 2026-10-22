@@ -37,6 +37,7 @@ it("refreshes the list on every sign-in", async () => {
   );
   const page = await home(await signIn(BOB, null));
   expect(page).toContain("Install the release-gate app on a repository you administer");
+  expect(page).toContain('href="https://github.com/apps/release-gate-test/installations/new"');
   expect(page).toContain("not an approver for any repository yet");
 });
 

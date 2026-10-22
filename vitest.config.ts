@@ -18,6 +18,7 @@ export default defineConfig(async () => ({
         bindings: {
           TEST_MIGRATIONS: await readD1Migrations("./migrations"),
           PUBLIC_ORIGIN: "https://gate.test",
+          GITHUB_APP_SLUG: "release-gate-test",
           GITHUB_APP_ID: "1234",
           GITHUB_APP_PRIVATE_KEY: privateKey,
           GITHUB_WEBHOOK_SECRET: "webhook-secret",

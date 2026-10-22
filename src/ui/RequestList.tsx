@@ -12,6 +12,7 @@ type Props = {
   recent: ApprovalRequest[];
   repos: string[];
   installed: UserRepo[];
+  installUrl: string;
 };
 
 const STATUS_COLORS = {
@@ -59,7 +60,15 @@ const List = ({ requests, empty }: { requests: ApprovalRequest[]; empty: string 
     </ul>
   );
 
-export const RequestList = ({ login, hasPasskey, open, recent, repos, installed }: Props) => {
+export const RequestList = ({
+  login,
+  hasPasskey,
+  open,
+  recent,
+  repos,
+  installed,
+  installUrl,
+}: Props) => {
   const claimable = installed.filter((repo) => !repo.claimed).map((repo) => repo.repo_full_name);
   return (
     <>
@@ -99,14 +108,10 @@ export const RequestList = ({ login, hasPasskey, open, recent, repos, installed 
       <Section title="Set up a repository">
         <p class="mb-8 max-w-[60ch] text-xl">
           {installed.length === 0
-            ? "Install the release-gate app on a repository you administer on GitHub, then "
+            ? "Install the release-gate app on a repository you administer on GitHub. You come back here to set it up and become its first admin."
             : claimable.length === 0
-              ? "Every repository you administer with the release-gate app installed is already set up. To add another, install the app on it, then "
-              : "Pick a repository you administer on GitHub that has the release-gate app installed. You become its first admin. Missing one? Install the app on it, then "}
-          <a href="/auth/login" class={link}>
-            refresh the list
-          </a>
-          .
+              ? "Every repository you administer with the release-gate app installed is already set up. Install the app on another one to add it."
+              : "Pick a repository you administer on GitHub that has the release-gate app installed. You become its first admin."}
         </p>
         {claimable.length > 0 && (
           <PasskeyForm
@@ -121,6 +126,17 @@ export const RequestList = ({ login, hasPasskey, open, recent, repos, installed 
             </Field>
           </PasskeyForm>
         )}
+        <a
+          href={installUrl}
+          class={`inline-flex items-center gap-2.5 rounded-full border-2 border-black font-semibold transition hover:-rotate-2 motion-reduce:hover:rotate-0 ${
+            claimable.length > 0
+              ? "mt-6 bg-white px-4 py-1.5 text-base hover:bg-yellow"
+              : "bg-black px-6 py-3 text-lg text-white hover:bg-yellow hover:text-black"
+          }`}
+        >
+          <GitHubIcon class="size-5 shrink-0" />
+          {claimable.length > 0 ? "Install on another repository" : "Install on GitHub"}
+        </a>
       </Section>
     </>
   );
