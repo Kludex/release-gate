@@ -19,9 +19,10 @@ import { decide, deliver } from "@/github/callback";
 import { previousTag, tagName } from "@/github/repo";
 import { currentUser, fail, jsonBody } from "@/http";
 import { voteViolation } from "@/policy";
+import { Home } from "@/ui/Home";
 import { Layout } from "@/ui/Layout";
 import { RequestDetail } from "@/ui/RequestDetail";
-import { displayRef, Home, RequestList } from "@/ui/RequestList";
+import { displayRef, RequestList } from "@/ui/RequestList";
 
 export const requests = new Hono<AppEnv>();
 

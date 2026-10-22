@@ -20,6 +20,10 @@ verification required) on its web page.
 
 ## Why
 
+On October 21, 2026, LiteLLM 1.107.0 reached PyPI and Docker Hub with a credential stealer inside. Their release
+workflow had a required approval, and the attacker passed it with a stolen maintainer token. See
+[LiteLLM's incident report](https://docs.litellm.ai/blog/security-incident-oct-21-2026).
+
 GitHub's "required reviewers" can be approved through the REST API with any token that has `repo` scope. That approval
 never asks for 2FA, sudo mode or a passkey. A stolen token can push a tag and approve its own release.
 
