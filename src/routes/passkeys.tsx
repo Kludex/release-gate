@@ -5,13 +5,13 @@ import {
   verifyAuthentication,
   verifyRegistration,
 } from "@/auth/webauthn";
+import { claimableRepo, claimStatements } from "@/claim";
 import { audit } from "@/db/audit";
 import { deleteCredential, listCredentials } from "@/db/credentials";
 import { consumeInvite } from "@/db/enrollment";
 import { upsertApprover } from "@/db/repos";
 import type { AppEnv } from "@/env";
 import { currentUser, fail, jsonBody, stringField } from "@/http";
-import { requireSetup } from "@/routes/enroll";
 import { Layout } from "@/ui/Layout";
 import { Passkeys } from "@/ui/Passkeys";
 
@@ -63,11 +63,13 @@ passkeys.post("/passkeys/register/verify", async (c) => {
     return c.json({ redirect: "/passkeys" });
   }
 
-  if (purpose === "setup") {
-    await requireSetup(c.env, user);
-    await save.run();
-    await audit(db, { actor: user, action: "owner.setup" });
-    return c.json({ redirect: "/" });
+  if (purpose.startsWith("claim:")) {
+    // Claiming registers a first passkey only. Later ones need an existing passkey.
+    if ((await listCredentials(db, user.id)).length > 0) fail(409, "You already have a passkey");
+    const repo = await claimableRepo(c.env, user, purpose.slice("claim:".length));
+    await db.batch([save, ...claimStatements(db, user, repo)]);
+    await audit(db, { actor: user, action: "repo.claimed", repo });
+    return c.json({ redirect: `/admin/${repo}` });
   }
 
   const invite = await consumeInvite(db, purpose.slice("invite:".length));

@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { authenticationChallenge, verifyAuthentication } from "@/auth/webauthn";
 import { audit } from "@/db/audit";
+import { listCredentials } from "@/db/credentials";
 import { getApprover, getPolicy, listAdminRepos, type RepoPolicy } from "@/db/repos";
 import {
   type ApprovalRequest,
@@ -16,7 +17,7 @@ import type { AppEnv, Env, User } from "@/env";
 import { installationToken } from "@/github/app";
 import { decide, deliver } from "@/github/callback";
 import { previousTag, tagName } from "@/github/repo";
-import { currentUser, fail, isOwner, jsonBody } from "@/http";
+import { currentUser, fail, jsonBody } from "@/http";
 import { voteViolation } from "@/policy";
 import { Layout } from "@/ui/Layout";
 import { RequestDetail } from "@/ui/RequestDetail";
@@ -33,16 +34,17 @@ requests.get("/", async (c) => {
       </Layout>,
     );
   }
-  const [open, recent, repos] = await Promise.all([
+  const [open, recent, repos, passkeys] = await Promise.all([
     listRequestsForApprover(c.env.DB, user.id, true),
     listRequestsForApprover(c.env.DB, user.id, false),
     listAdminRepos(c.env.DB, user.id),
+    listCredentials(c.env.DB, user.id),
   ]);
   return c.html(
     <Layout title="Requests" user={user} page="requests">
       <RequestList
         login={user.login}
-        owner={isOwner(c.env, user)}
+        hasPasskey={passkeys.length > 0}
         open={open}
         recent={recent}
         repos={repos}

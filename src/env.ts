@@ -7,7 +7,6 @@ export type Env = {
   GITHUB_CLIENT_ID: string;
   GITHUB_CLIENT_SECRET: string;
   SESSION_SECRET: string;
-  OWNER_GITHUB_ID: string;
   PUBLIC_ORIGIN: string;
   RP_NAME: string;
 };

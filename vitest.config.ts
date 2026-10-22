@@ -24,7 +24,6 @@ export default defineConfig(async () => ({
           GITHUB_CLIENT_ID: "client-id",
           GITHUB_CLIENT_SECRET: "client-secret",
           SESSION_SECRET: "session-secret",
-          OWNER_GITHUB_ID: "1",
         },
       },
     }),

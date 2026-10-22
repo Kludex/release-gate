@@ -35,6 +35,21 @@ export const github = {
   },
 };
 
+/** Routes for `user` claiming `repo`: the app is installed and they are a GitHub admin. */
+export function claimRoutes(
+  user: { id: number; login: string },
+  repo = REPO,
+  permission = "admin",
+): void {
+  github.on("GET", `${API}/repos/${repo}/installation`, { id: 7 });
+  github.on("POST", `${API}/app/installations/7/access_tokens`, { token: "installation-token" });
+  github.on("GET", `${API}/repos/${repo}`, { full_name: repo });
+  github.on("GET", `${API}/repos/${repo}/collaborators/${user.login}/permission`, {
+    permission,
+    user: { id: user.id },
+  });
+}
+
 /** Routes for a healthy tag release of `v1.0.0` on `acme/widgets`. */
 export function releaseRoutes(
   options: { initiators?: number[]; callbackStatus?: number } = {},

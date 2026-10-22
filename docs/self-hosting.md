@@ -50,10 +50,7 @@ Go to **Settings → Developer settings → GitHub Apps → New GitHub App** on 
 | Webhook secret | `openssl rand -hex 32` |
 | Repository permissions | Deployments: read and write; Actions: read; Contents: read; Metadata: read |
 | Subscribe to events | Deployment protection rule |
-| Where can this app be installed | Only on this account |
-
-Keep the app private. A public app can be installed by anyone, and their webhooks would reach your worker.
-Create it on the account that owns the repositories, such as your organization.
+| Where can this app be installed | Any account, to host it for others. Only on this account, to keep it to yourself. |
 
 Then generate a private key. GitHub gives you PKCS#1, but WebCrypto needs PKCS#8:
 
@@ -70,12 +67,7 @@ pnpm exec wrangler secret put GITHUB_WEBHOOK_SECRET
 pnpm exec wrangler secret put GITHUB_CLIENT_ID
 pnpm exec wrangler secret put GITHUB_CLIENT_SECRET
 openssl rand -hex 32 | pnpm exec wrangler secret put SESSION_SECRET
-gh api users/<your-login> --jq .id | pnpm exec wrangler secret put OWNER_GITHUB_ID
 ```
-
-`OWNER_GITHUB_ID` is the numeric id of the GitHub user who sets up release-gate. A login can be renamed and
-reclaimed by someone else, an id can't. It isn't sensitive, but as a secret it stays out of `wrangler.jsonc`, so
-forks don't inherit it.
 
 Delete the `.pem` files.
 
@@ -87,27 +79,26 @@ pnpm run deploy
 
 Deploys are manual. CI never holds Cloudflare credentials.
 
-## 7. Set up the owner
+## 7. Set up a repository
 
-1. Open `PUBLIC_ORIGIN` and sign in with GitHub as the owner.
-2. Go to `PUBLIC_ORIGIN/setup` and register your first passkey.
-3. On the home page, add a repository as `owner/name`, with the exact casing GitHub uses. You become its admin.
+1. Install the app on the repository.
+2. Open `PUBLIC_ORIGIN`, sign in with GitHub, and enter the repository under **Set up a repository**.
+3. Register your first passkey, or confirm with an existing one. You become the repository's admin.
 
-`/setup` only works for the owner, and only until they have a passkey. Add more repositories the same way at any
-time.
+Only a GitHub admin of the repository can set it up, and only while nobody else has. After that, people join by
+invite.
 
 > [!WARNING]
-> Sign in right after deploying. Until the owner has a passkey, anyone holding a stolen session for the owner's
-> GitHub account could register one first.
+> Set up the repository right after installing the app. Until then, a stolen token of any GitHub admin of the
+> repository could set it up first.
 
 ## 8. Protect an environment
 
-1. Install the app on the repository.
-2. Open **Settings → Environments → your environment**.
-3. Under **Deployment protection rules**, enable release-gate.
-4. Turn off **Allow administrators to bypass configured protection rules**.
+1. Open **Settings → Environments → your environment**.
+2. Under **Deployment protection rules**, enable release-gate.
+3. Turn off **Allow administrators to bypass configured protection rules**.
 
-A repository that the owner hasn't added gets every deployment rejected.
+A repository that nobody has set up gets every deployment rejected.
 
 ## Adding approvers
 
@@ -133,12 +124,18 @@ away for `error` and after 5 minutes for `delivering`.
 
 ## Recovery
 
-If the owner loses every passkey, delete their passkeys from D1:
+An approver who loses every passkey gets a new invite from an admin, after the operator deletes their passkeys:
 
 ```sh
 pnpm exec wrangler d1 execute release-gate --remote \
-  --command "DELETE FROM credentials WHERE github_user_id = <owner-id>"
+  --command "DELETE FROM credentials WHERE github_user_id = <id>"
 ```
 
-Then open `/setup` again. This needs access to the Cloudflare account, which is the root of trust for this service.
-Other approvers who lose every passkey get a new invite from an admin.
+If a repository loses every admin, the operator also deletes its approvers, and a GitHub admin sets it up again:
+
+```sh
+pnpm exec wrangler d1 execute release-gate --remote \
+  --command "DELETE FROM approvers WHERE repo_full_name = '<owner>/<repo>'"
+```
+
+Both need access to the Cloudflare account, which is the root of trust for this service.

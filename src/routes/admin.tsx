@@ -1,9 +1,14 @@
 import { type Context, Hono } from "hono";
-import { authenticationChallenge, verifyAuthentication } from "@/auth/webauthn";
+import {
+  authenticationChallenge,
+  registrationChallenge,
+  verifyAuthentication,
+} from "@/auth/webauthn";
+import { claimableRepo, claimStatements, REPO_NAME } from "@/claim";
 import { audit, listAudit } from "@/db/audit";
+import { listCredentials } from "@/db/credentials";
 import { insertInvite, listOpenInvites } from "@/db/enrollment";
 import {
-  ensurePolicy,
   getApprover,
   getPolicy,
   listAdminRepos,
@@ -11,14 +16,12 @@ import {
   type RepoPolicy,
   removeApprover,
   updatePolicy,
-  upsertApprover,
 } from "@/db/repos";
 import type { AppEnv, User } from "@/env";
 import {
   type Body,
   currentUser,
   fail,
-  isOwner,
   jsonBody,
   randomToken,
   sha256Hex,
@@ -30,32 +33,26 @@ import { Layout } from "@/ui/Layout";
 
 const INVITE_TTL_MS = 24 * 60 * 60 * 1000;
 const LOGIN = /^[A-Za-z0-9-]{1,39}$/;
-const REPO = /^[A-Za-z0-9-]{1,39}\/[A-Za-z0-9._-]{1,100}$/;
 
 export const admin = new Hono<AppEnv>();
 
 admin.post("/repos/challenge", async (c) => {
-  return c.json(await authenticationChallenge(c.env, requireOwner(c), "add-repo"));
+  return c.json(await authenticationChallenge(c.env, currentUser(c), "add-repo"));
 });
 
 admin.post("/repos", async (c) => {
-  const user = requireOwner(c);
+  const user = currentUser(c);
   const body = await jsonBody(c);
-  const repo = stringField(body, "repo").trim();
-  if (!REPO.test(repo)) fail(400, "Enter the repository as owner/name");
-  await verifyAuthentication(c.env, user, body, ["add-repo"]);
-  const db = c.env.DB;
-  await db.batch([
-    ensurePolicy(db, repo),
-    upsertApprover(db, {
-      repo_full_name: repo,
-      github_user_id: user.id,
-      login: user.login,
-      role: "admin",
-      added_by: null,
-    }),
-  ]);
-  await audit(db, { actor: user, action: "repo.added", repo });
+  const name = stringField(body, "repo").trim();
+  if (!REPO_NAME.test(name)) fail(400, "Enter the repository as owner/name");
+  const hasPasskey = (await listCredentials(c.env.DB, user.id)).length > 0;
+  if (hasPasskey) await verifyAuthentication(c.env, user, body, ["add-repo"]);
+  const repo = await claimableRepo(c.env, user, name);
+  if (!hasPasskey) {
+    return c.json({ registration: await registrationChallenge(c.env, user, `claim:${repo}`) });
+  }
+  await c.env.DB.batch(claimStatements(c.env.DB, user, repo));
+  await audit(c.env.DB, { actor: user, action: "repo.claimed", repo });
   return c.json({ redirect: `/admin/${repo}` });
 });
 
@@ -136,12 +133,6 @@ admin.post("/admin/:owner/:repo/approvers/remove", async (c) => {
   await audit(c.env.DB, { actor: user, action: "approver.removed", repo, details: { userId } });
   return c.json({ redirect: `/admin/${repo}` });
 });
-
-function requireOwner(c: Context<AppEnv>): User {
-  const user = currentUser(c);
-  if (!isOwner(c.env, user)) fail(404, "Not found");
-  return user;
-}
 
 async function requireAdmin(
   c: Context<AppEnv>,

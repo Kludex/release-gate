@@ -1,5 +1,5 @@
 import { expect, it, vi } from "vitest";
-import { ADMIN, call, cookie, ORIGIN, ownerAdmin, signIn } from "./helpers";
+import { ADMIN, call, cookie, ORIGIN, setUpAdmin, signIn } from "./helpers";
 
 it("signs in with GitHub and shows the dashboard", async () => {
   const session = await signIn(ADMIN);
@@ -87,7 +87,7 @@ it.each([
   ["a foreign", "https://evil.test"],
   ["a missing", null],
 ])("blocks POSTs with %s Origin", async (_, origin) => {
-  const admin = await ownerAdmin();
+  const admin = await setUpAdmin();
   const response = await call("/passkeys/challenge", { cookie: admin.cookie, body: {}, origin });
   expect(response.status).toBe(403);
 });
@@ -108,21 +108,14 @@ it("sets security headers on every response", async () => {
 });
 
 it("redirects anonymous visitors to the sign-in page", async () => {
-  for (const path of [
-    "/passkeys",
-    "/setup",
-    "/invite",
-    "/audit",
-    "/admin/acme/widgets",
-    "/requests/x",
-  ]) {
+  for (const path of ["/passkeys", "/invite", "/audit", "/admin/acme/widgets", "/requests/x"]) {
     const response = await call(path);
     expect(response.headers.get("Location"), path).toBe("/");
   }
 });
 
 it("rejects a non-JSON body", async () => {
-  const admin = await ownerAdmin();
+  const admin = await setUpAdmin();
   const response = await call("/invite", { cookie: admin.cookie, body: "[]" });
   expect(await response.json()).toEqual({ error: "Expected a JSON object" });
   const broken = await call("/invite", { cookie: admin.cookie, body: "{" });

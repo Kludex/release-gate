@@ -52,12 +52,25 @@ Each repository has a policy that admins edit in the UI. Every change requires a
 | `prevent_self_review` | on | Whoever started the deployment can't approve it: the tag pusher, the run's `actor` and its `triggering_actor` (re-runs). They can still reject. |
 | `require_default_branch` | on | The tagged commit must be on the default branch. |
 
-Approvers are an explicit allowlist per repository. GitHub permissions are never used to infer them, because a token
-holder could change those.
+Approvers are an explicit allowlist per repository. GitHub permissions are used once: the first admin of a repository
+must be one of its admins on GitHub, who could remove the protection rule anyway. After that, a repository grows only by
+invites, because a token holder could change GitHub permissions.
+
+## Getting started
+
+1. Install the app on your repository. The hosted instance is
+   [secure-release-gate](https://github.com/apps/secure-release-gate), or [host your own](docs/self-hosting.md).
+2. Open the instance, sign in with GitHub, and set up the repository on the home page. You register your first passkey
+   and become its admin.
+3. Under **Settings → Environments**, enable the app as a deployment protection rule on the release environment.
+
+> [!WARNING]
+> Whoever operates an instance can approve releases for every repository that installed its app. Use the hosted
+> instance only if you trust its operator. Otherwise, self-host.
 
 ## Documentation
 
-- [Self-hosting](docs/self-hosting.md): create the GitHub App, deploy to Cloudflare, set up the owner.
+- [Self-hosting](docs/self-hosting.md): create the GitHub App, deploy to Cloudflare, set up a repository.
 - [Threat model](docs/threat-model.md): what release-gate protects against, and what it doesn't.
 - [Rollout checklist](docs/rollout.md): the sandbox test and the Starlette rollout.
 - [Security policy](SECURITY.md)

@@ -6,7 +6,7 @@ import { Field, inputClass, PasskeyForm } from "@/ui/PasskeyForm";
 
 type Props = {
   login: string;
-  owner: boolean;
+  hasPasskey: boolean;
   open: ApprovalRequest[];
   recent: ApprovalRequest[];
   repos: string[];
@@ -57,7 +57,7 @@ const List = ({ requests, empty }: { requests: ApprovalRequest[]; empty: string 
     </ul>
   );
 
-export const RequestList = ({ login, owner, open, recent, repos }: Props) => (
+export const RequestList = ({ login, hasPasskey, open, recent, repos }: Props) => (
   <>
     <PageTitle
       title="Releases"
@@ -65,24 +65,12 @@ export const RequestList = ({ login, owner, open, recent, repos }: Props) => (
     />
     {repos.length === 0 && (
       <p class="mt-10 max-w-[60ch] rounded-3xl bg-cream px-6 py-5 text-xl">
-        {owner ? (
-          <>
-            You own this release-gate. If you have no passkey yet,{" "}
-            <a href="/setup" class={link}>
-              register your first one
-            </a>
-            . Then add a repository below.
-          </>
-        ) : (
-          <>
-            You are not an approver for any repository. Ask an admin for an invite code and enter it
-            on the{" "}
-            <a href="/invite" class={link}>
-              invite page
-            </a>
-            .
-          </>
-        )}
+        You are not an approver for any repository yet. Set up one you administer on GitHub below,
+        or enter an invite code from an admin on the{" "}
+        <a href="/invite" class={link}>
+          invite page
+        </a>
+        .
       </p>
     )}
     <Section title="Waiting for a decision">
@@ -104,24 +92,26 @@ export const RequestList = ({ login, owner, open, recent, repos }: Props) => (
         </ul>
       </Section>
     )}
-    {owner && (
-      <Section title="Add a repository">
-        <PasskeyForm action="/repos" challenge="/repos/challenge" label="Add repository">
-          <Field label="Repository">
-            <input
-              name="repo"
-              required
-              class={`${inputClass} max-w-md font-mono`}
-              placeholder="Kludex/starlette"
-            />
-          </Field>
-        </PasskeyForm>
-        <p class="mt-4 max-w-[60ch] text-lg">
-          You become its admin. Use the exact owner/name casing from GitHub, and install the app on
-          it.
-        </p>
-      </Section>
-    )}
+    <Section title="Set up a repository">
+      <p class="mb-8 max-w-[60ch] text-xl">
+        Install the release-gate app on a repository you administer on GitHub, then enter it here.
+        You become its first admin.
+      </p>
+      <PasskeyForm
+        action="/repos"
+        challenge={hasPasskey ? "/repos/challenge" : undefined}
+        label={hasPasskey ? "Set up repository" : "Register a passkey and set up"}
+      >
+        <Field label="Repository">
+          <input
+            name="repo"
+            required
+            class={`${inputClass} max-w-md font-mono`}
+            placeholder="owner/name"
+          />
+        </Field>
+      </PasskeyForm>
+    </Section>
   </>
 );
 

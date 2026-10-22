@@ -3,7 +3,7 @@ import { sign } from "@octokit/webhooks-methods";
 import type { User } from "@/env";
 import app from "@/index";
 import { Authenticator } from "./authenticator";
-import { API, CALLBACK_URL, github, REPO, releaseRoutes, SHA } from "./github";
+import { API, CALLBACK_URL, claimRoutes, github, REPO, releaseRoutes, SHA } from "./github";
 
 export const ORIGIN = "https://gate.test";
 export const ADMIN: User = { id: 1, login: "admin" };
@@ -69,10 +69,10 @@ export async function register(member: Member, registration: Ceremony): Promise<
   });
 }
 
-/** Signs in and registers a first passkey through `/setup` or `/invite`. */
-export async function enroll(user: User, path: "/setup" | "/invite", code = ""): Promise<Member> {
+/** Signs in and registers a first passkey through `/invite` or by setting up a repository. */
+export async function enroll(user: User, path: "/repos" | "/invite", code = ""): Promise<Member> {
   const member = { user, cookie: await signIn(user), passkey: await Authenticator.create() };
-  const response = await call(path, { cookie: member.cookie, body: { code } });
+  const response = await call(path, { cookie: member.cookie, body: { code, repo: REPO } });
   if (!response.ok) throw new Error(`Enrollment failed: ${await response.text()}`);
   const { registration } = await response.json<{ registration: Ceremony }>();
   const verified = await register(member, registration);
@@ -80,12 +80,10 @@ export async function enroll(user: User, path: "/setup" | "/invite", code = ""):
   return member;
 }
 
-/** Sets up the owner, who adds `REPO` and becomes its admin. */
-export async function ownerAdmin(): Promise<Member> {
-  const owner = await enroll(ADMIN, "/setup");
-  const response = await passkeyAction(owner, "/repos/challenge", "/repos", { repo: REPO });
-  if (!response.ok) throw new Error(`Adding the repo failed: ${await response.text()}`);
-  return owner;
+/** A GitHub admin of `REPO` sets it up in release-gate with their first passkey. */
+export function setUpAdmin(): Promise<Member> {
+  claimRoutes(ADMIN);
+  return enroll(ADMIN, "/repos");
 }
 
 /** Runs the same challenge, assertion and submit sequence as `client/webauthn.ts`. */

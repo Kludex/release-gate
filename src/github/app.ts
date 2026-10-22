@@ -27,15 +27,21 @@ export async function githubJson<T>(path: string, token: string): Promise<T> {
   return response.json<T>();
 }
 
+/** The app installation covering `repo`, or `null` when the app isn't installed there. */
+export async function repoInstallation(env: Env, repo: string): Promise<number | null> {
+  const response = await githubFetch(`/repos/${repo}/installation`, await appJwt(env));
+  if (response.status === 404) return null;
+  if (!response.ok)
+    throw new GitHubError(`Installation lookup failed with HTTP ${response.status}`);
+  return (await response.json<{ id: number }>()).id;
+}
+
 export async function installationToken(
   env: Env,
   installationId: number,
   repoFullName: string,
 ): Promise<string> {
-  const { token: jwt } = await githubAppJwt({
-    id: env.GITHUB_APP_ID,
-    privateKey: env.GITHUB_APP_PRIVATE_KEY,
-  });
+  const jwt = await appJwt(env);
   const response = await githubFetch(`/app/installations/${installationId}/access_tokens`, jwt, {
     method: "POST",
     body: JSON.stringify({ repositories: [repoFullName.split("/")[1]] }),
@@ -44,4 +50,12 @@ export async function installationToken(
     throw new GitHubError(`Installation token request failed with HTTP ${response.status}`);
   }
   return (await response.json<{ token: string }>()).token;
+}
+
+async function appJwt(env: Env): Promise<string> {
+  const { token } = await githubAppJwt({
+    id: env.GITHUB_APP_ID,
+    privateKey: env.GITHUB_APP_PRIVATE_KEY,
+  });
+  return token;
 }
