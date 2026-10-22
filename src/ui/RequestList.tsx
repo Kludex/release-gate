@@ -1,7 +1,7 @@
 import type { ApprovalRequest } from "@/db/requests";
-import { ArrowIcon, Blob, GitHubIcon } from "@/ui/Icons";
+import { Blob, GitHubIcon } from "@/ui/Icons";
 import { Padlock } from "@/ui/Illustration";
-import { Band, Empty, formatTime, link, PageTitle, rows, Section, Tag } from "@/ui/Layout";
+import { Empty, formatTime, link, meta, PageTitle, Section, Tag } from "@/ui/Layout";
 
 type Props = {
   login: string;
@@ -13,45 +13,33 @@ type Props = {
 const STATUS_COLORS = {
   checking: "grey",
   pending: "yellow",
-  delivering: "blue",
-  approved: "green",
-  rejected: "red",
+  delivering: "sky",
+  approved: "mint",
+  rejected: "rose",
   error: "black",
 } as const;
 
-export const StatusBadge = ({
-  status,
-  big,
-}: {
-  status: ApprovalRequest["status"];
-  big?: boolean;
-}) => (
-  <Tag color={STATUS_COLORS[status]} big={big}>
-    {status}
-  </Tag>
+export const StatusBadge = ({ status }: { status: ApprovalRequest["status"] }) => (
+  <Tag color={STATUS_COLORS[status]}>{status}</Tag>
 );
 
 export const displayRef = (ref: string): string => ref.replace(/^refs\/tags\//, "");
 
 const Row = ({ request }: { request: ApprovalRequest }) => (
   <li>
-    <a
-      href={`/requests/${request.id}`}
-      class="group grid grid-cols-[1fr_auto] items-center gap-x-6 gap-y-2 px-5 py-5 transition-colors hover:bg-yellow sm:grid-cols-[7.5rem_1fr_auto_auto]"
-    >
-      <span class="col-span-2 sm:col-span-1">
-        <StatusBadge status={request.status} />
-      </span>
-      <span class="min-w-0">
-        <span class="block break-words text-2xl font-bold leading-tight">
+    <a href={`/requests/${request.id}`} class="group block space-y-2">
+      <span class="block break-words text-3xl font-bold leading-tight">
+        <span class="underline decoration-yellow decoration-[0.2em] underline-offset-[0.1em] transition-colors group-hover:decoration-black">
           {displayRef(request.ref)}
         </span>
-        <span class="block break-words text-base text-grey-700">
-          {request.repo_full_name} to <strong class="text-black">{request.environment}</strong>
-        </span>
       </span>
-      <time class="hidden text-base sm:block">{formatTime(request.created_at)}</time>
-      <ArrowIcon class="size-7 transition-transform group-hover:translate-x-1" />
+      <span class={`${meta} flex flex-wrap items-center gap-x-3 gap-y-1`}>
+        <StatusBadge status={request.status} />
+        <time>{formatTime(request.created_at)}</time>
+      </span>
+      <span class="block break-words text-xl">
+        {request.repo_full_name} to <strong class="font-semibold">{request.environment}</strong>
+      </span>
     </a>
   </li>
 );
@@ -60,7 +48,7 @@ const List = ({ requests, empty }: { requests: ApprovalRequest[]; empty: string 
   requests.length === 0 ? (
     <Empty>{empty}</Empty>
   ) : (
-    <ul class={rows}>
+    <ul class="space-y-10">
       {requests.map((request) => (
         <Row request={request} />
       ))}
@@ -74,34 +62,28 @@ export const RequestList = ({ login, open, recent, repos }: Props) => (
       subtitle={`Hi @${login}. Tag pushes to protected environments wait here for your passkey.`}
     />
     {repos.length === 0 && (
-      <Band tone="caramel">
-        <p class="text-lg font-medium">
-          You are not an approver for any repository. Ask an admin for an invite code and enter it
-          on the{" "}
-          <a href="/invite" class={link}>
-            invite page
-          </a>
-          .
-        </p>
-      </Band>
+      <p class="mt-10 max-w-[60ch] rounded-3xl bg-cream px-6 py-5 text-xl">
+        You are not an approver for any repository. Ask an admin for an invite code and enter it on
+        the{" "}
+        <a href="/invite" class={link}>
+          invite page
+        </a>
+        .
+      </p>
     )}
     <Section title="Waiting for a decision">
       <List requests={open} empty="Nothing is waiting for you." />
     </Section>
-    <Section title="Recent decisions" tone="caramel">
+    <Section title="Recent decisions">
       <List requests={recent} empty="No decisions yet." />
     </Section>
     {repos.length > 0 && (
       <Section title="Repositories you administer">
-        <ul class="flex flex-wrap gap-4">
+        <ul class="space-y-3 text-xl">
           {repos.map((repo) => (
             <li>
-              <a
-                href={`/admin/${repo}`}
-                class="flex items-center gap-4 border-3 border-black bg-cream px-5 py-4 text-lg font-bold transition-colors hover:bg-green"
-              >
+              <a href={`/admin/${repo}`} class={link}>
                 {repo}
-                <ArrowIcon class="size-5" />
               </a>
             </li>
           ))}
@@ -119,42 +101,41 @@ const STEPS = [
 
 export const SignIn = () => (
   <>
-    <Band>
-      <div class="grid items-center gap-10 lg:grid-cols-[1fr_22rem]">
-        <div class="space-y-8">
-          <h1 class="text-5xl font-extrabold leading-[0.95] tracking-tight lg:text-[5.5rem]">
-            Every release waits for a{" "}
-            <span class="relative isolate inline-block">
-              <Blob />
-              passkey.
-            </span>
-          </h1>
-          <p class="max-w-[46ch] text-lg font-medium lg:text-2xl">
-            Releases on protected environments wait here until an approver confirms with a passkey.
-          </p>
-          <a
-            href="/auth/login"
-            class="inline-flex items-center gap-3 border-3 border-black bg-coral px-7 py-4 text-base font-bold uppercase leading-none transition-colors hover:bg-green lg:px-9 lg:py-5 lg:text-lg"
-          >
-            <GitHubIcon class="size-6" />
-            Sign in with GitHub
-          </a>
-        </div>
-        <Padlock class="mx-auto w-56 lg:w-full" />
+    <div class="grid items-center gap-12 pt-10 lg:grid-cols-[1fr_20rem] lg:pt-16">
+      <div class="space-y-8">
+        <h1 class="text-5xl font-bold leading-[1.05] tracking-tight sm:text-6xl lg:text-7xl">
+          Every release waits for a{" "}
+          <span class="relative isolate inline-block">
+            <Blob class="top-[0.3em] left-[0.5em] h-[0.95em] w-[1.6em]" />
+            passkey.
+          </span>
+        </h1>
+        <p class="max-w-[42ch] text-xl leading-relaxed lg:text-2xl">
+          Releases on protected environments wait here until an approver confirms with a passkey.
+        </p>
+        <a
+          href="/auth/login"
+          class="inline-flex items-center gap-3 rounded-full border-2 border-black bg-black px-6 py-3 text-lg font-semibold text-white transition hover:-rotate-2 hover:bg-yellow hover:text-black motion-reduce:hover:rotate-0"
+        >
+          <GitHubIcon class="size-5" />
+          Sign in with GitHub
+        </a>
       </div>
-    </Band>
-    <Band tone="caramel">
-      <ol class="grid divide-y-3 divide-black border-3 border-black bg-cream md:grid-cols-3 md:divide-x-3 md:divide-y-0">
+      <Padlock class="mx-auto w-60 rotate-6 lg:w-full" />
+    </div>
+    <Section title="How it works">
+      <ol class="grid gap-10 md:grid-cols-3">
         {STEPS.map(([title, text], index) => (
-          <li class="space-y-3 p-6">
-            <span class="grid size-10 place-items-center border-3 border-black bg-yellow text-lg font-extrabold">
+          <li class="space-y-2">
+            <span class="relative isolate grid size-12 place-items-center font-display text-2xl">
+              <Blob class="inset-0 size-full" />
               {index + 1}
             </span>
-            <h2 class="text-2xl font-bold leading-tight">{title}</h2>
-            <p class="text-base">{text}</p>
+            <h3 class="text-balance text-2xl font-bold leading-tight">{title}</h3>
+            <p class="text-lg leading-relaxed">{text}</p>
           </li>
         ))}
       </ol>
-    </Band>
+    </Section>
   </>
 );

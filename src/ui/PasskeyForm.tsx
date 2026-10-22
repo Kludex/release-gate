@@ -14,9 +14,9 @@ type Props = {
 };
 
 const TONES: Record<Tone, string> = {
-  primary: "bg-coral hover:bg-green",
-  danger: "bg-milk hover:bg-red",
-  neutral: "bg-milk hover:bg-green",
+  primary: "border-black bg-black text-white hover:bg-yellow hover:text-black",
+  danger: "border-black bg-white hover:bg-rose",
+  neutral: "border-black bg-white hover:bg-yellow",
 };
 
 /**
@@ -45,30 +45,30 @@ export const PasskeyForm = ({
     {children}
     <button
       type="submit"
-      class={`inline-flex cursor-pointer items-center gap-3 self-start border-3 text-left border-black font-bold uppercase leading-none transition-colors group-data-[state=busy]/form:busy-stripes disabled:cursor-wait ${
-        small ? "px-4 py-2.5 text-sm" : "px-7 py-4 text-base lg:px-9 lg:py-5 lg:text-lg"
+      class={`inline-flex cursor-pointer items-center gap-2.5 self-start rounded-full border-2 text-left font-semibold leading-tight transition hover:-rotate-2 group-data-[state=busy]/form:busy-stripes group-data-[state=busy]/form:text-black disabled:cursor-wait disabled:hover:rotate-0 motion-reduce:hover:rotate-0 ${
+        small ? "px-4 py-1.5 text-base" : "px-6 py-3 text-lg"
       } ${TONES[tone]}`}
     >
-      <PasskeyIcon class={`shrink-0 ${small ? "size-4" : "size-6"}`} />
+      <PasskeyIcon class={`shrink-0 ${small ? "size-4" : "size-5"}`} />
       {label}
     </button>
     <p
       data-output
       role="status"
-      class="text-base font-medium empty:hidden group-data-[state=error]/form:border-3 group-data-[state=error]/form:border-red group-data-[state=error]/form:bg-red/15 group-data-[state=error]/form:px-4 group-data-[state=error]/form:py-3"
+      class="text-base empty:hidden group-data-[state=error]/form:self-start group-data-[state=error]/form:rounded-2xl group-data-[state=error]/form:bg-rose group-data-[state=error]/form:px-4 group-data-[state=error]/form:py-2"
     />
   </form>
 );
 
 export const inputClass =
-  "block w-full rounded-none border-0 border-b-3 border-black bg-transparent pb-2 text-xl font-medium outline-none transition-colors placeholder:font-normal placeholder:text-grey-700 focus:border-purple focus-visible:outline-none";
+  "block w-full rounded-none border-0 border-b-2 border-black bg-transparent pb-1.5 text-xl transition-shadow placeholder:text-grey-600 focus:shadow-[0_4px_0_0_var(--color-yellow)]";
 
 type FieldProps = { label: string; children: Child };
 
 export const Field = ({ label, children }: FieldProps) => (
   // biome-ignore lint/a11y/noLabelWithoutControl: the control arrives as `children`.
   <label class="block space-y-2">
-    <span class="block text-sm font-bold uppercase">{label}</span>
+    <span class="block text-sm font-semibold uppercase tracking-wide">{label}</span>
     {children}
   </label>
 );
@@ -80,23 +80,23 @@ export const Select = ({ name, options }: { name: string; options: string[] }) =
         <option value={option}>{option}</option>
       ))}
     </select>
-    <ChevronIcon class="pointer-events-none absolute top-1 right-0 size-5" />
+    <ChevronIcon class="pointer-events-none absolute top-1.5 right-0 size-5" />
   </span>
 );
 
 type CheckboxProps = { name: string; checked: boolean; children: Child };
 
 export const Checkbox = ({ name, checked, children }: CheckboxProps) => (
-  <label class="flex cursor-pointer items-start gap-4 text-lg">
-    <span class="relative mt-0.5 grid size-7 shrink-0 place-items-center">
+  <label class="flex cursor-pointer items-start gap-3 text-lg">
+    <span class="relative mt-0.5 grid size-6 shrink-0 place-items-center">
       <input
         type="checkbox"
         name={name}
         value="1"
         checked={checked}
-        class="peer absolute inset-0 cursor-pointer appearance-none border-3 border-black bg-milk transition-colors checked:bg-green"
+        class="peer absolute inset-0 cursor-pointer appearance-none rounded-md border-2 border-black bg-white transition-colors checked:bg-yellow"
       />
-      <CheckIcon class="pointer-events-none relative hidden size-5 peer-checked:block" />
+      <CheckIcon class="pointer-events-none relative hidden size-4 peer-checked:block" />
     </span>
     <span>{children}</span>
   </label>

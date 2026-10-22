@@ -4,14 +4,9 @@ const stroke = {
   fill: "none",
   stroke: "currentColor",
   "stroke-width": "2.5",
-  "stroke-linecap": "square",
+  "stroke-linecap": "round",
+  "stroke-linejoin": "round",
 } as const;
-
-export const ArrowIcon = ({ class: className }: Props) => (
-  <svg viewBox="0 0 24 24" class={className} aria-hidden="true" {...stroke}>
-    <path d="M3 12h17M13 5l7 7-7 7" />
-  </svg>
-);
 
 export const PasskeyIcon = ({ class: className }: Props) => (
   <svg viewBox="0 0 24 24" class={className} aria-hidden="true" {...stroke}>
@@ -40,14 +35,14 @@ export const GitHubIcon = ({ class: className }: Props) => (
   </svg>
 );
 
-/** The patrick.wtf highlighter: a hand-cut blob behind a word. */
-export const Blob = () => (
+/** The patrick.wtf highlighter: a lumpy yellow blob, positioned by `class`. */
+export const Blob = ({ class: className }: Props) => (
   <svg
     viewBox="-80 -80 160 160"
     preserveAspectRatio="none"
-    class="absolute -inset-x-[6%] -inset-y-[2%] -z-10 h-[104%] w-[112%] fill-yellow/70"
+    class={`absolute -z-10 fill-yellow ${className}`}
     aria-hidden="true"
   >
-    <path d="M47 -61C61 -50 70 -34 73 -17C76 0 73 18 64 33C55 48 40 60 23 66C6 72 -13 73 -30 66C-47 59 -62 45 -69 27C-76 9 -75 -11 -67 -28C-59 -45 -44 -58 -27 -66C-10 -74 9 -77 24 -74C39 -71 33 -72 47 -61Z" />
+    <path d="M-14 -74C26 -80 68 -66 78 -30C88 6 76 48 44 66C12 84 -36 80 -60 56C-84 32 -82 -10 -70 -38C-58 -66 -42 -70 -14 -74Z" />
   </svg>
 );

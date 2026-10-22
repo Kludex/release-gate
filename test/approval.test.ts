@@ -55,7 +55,7 @@ it("rejects through the callback", async () => {
     { environment_name: "pypi", state: "rejected", comment: "Rejected by @admin via passkey" },
   ]);
   const page = await (await call(`/requests/${id}`, { cookie: admin.cookie })).text();
-  expect(page).toMatch(/bg-red[^"]*">reject</);
+  expect(page).toMatch(/@admin<\/strong> rejected/);
 });
 
 describe("challenge validation", () => {

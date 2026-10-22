@@ -1,9 +1,16 @@
 @import "tailwindcss";
 
 @font-face {
-  font-family: "Onest";
-  src: url("/fonts/onest.woff2") format("woff2");
+  font-family: "Jost";
+  src: url("/fonts/jost.woff2") format("woff2");
   font-weight: 100 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Titan One";
+  src: url("/fonts/titan-one.woff2") format("woff2");
+  font-weight: 400;
   font-display: swap;
 }
 
@@ -14,25 +21,23 @@
   font-display: swap;
 }
 
-/* The Python Italia style guide palette. */
+/* After patrick.wtf: black on white, one warm yellow, and soft tints for status. */
 @theme {
-  --font-sans: "Onest", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Jost", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Titan One", "Jost", sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
 
   --color-*: initial;
-  --color-black: #0e1116;
-  --color-milk: #faf5f3;
-  --color-cream: #fce8de;
-  --color-caramel: #ead6ce;
-  --color-coral: #f17a5d;
-  --color-yellow: #f8b03d;
-  --color-green: #34b4a1;
-  --color-purple: #9473b0;
-  --color-pink: #dd9bc7;
-  --color-blue: #79cde0;
-  --color-red: #d75353;
-  --color-grey-700: #494a4d;
-  --color-grey-100: #e2dedd;
+  --color-black: #000;
+  --color-white: #fff;
+  --color-yellow: #f8cf7b;
+  --color-cream: #fdf3dc;
+  --color-grey-600: #5c5c5c;
+  --color-grey-200: #e6e6e6;
+  --color-mint: #b9e9c9;
+  --color-rose: #f8c0c0;
+  --color-sky: #c8e4f6;
+  --color-pink: #f6a9c2;
 
   --animate-stripes: stripes 0.6s linear infinite;
 
@@ -45,9 +50,9 @@
 
 @layer base {
   html {
-    @apply bg-milk text-black antialiased;
-    scrollbar-color: var(--color-black) var(--color-caramel);
-    caret-color: var(--color-purple);
+    @apply bg-white text-black antialiased;
+    scrollbar-color: var(--color-black) var(--color-white);
+    caret-color: var(--color-black);
   }
 
   ::selection {
@@ -55,8 +60,8 @@
   }
 
   :focus-visible {
-    outline: 3px solid var(--color-purple);
-    outline-offset: 3px;
+    outline: 2px solid var(--color-black);
+    outline-offset: 4px;
   }
 
   td,
@@ -70,7 +75,7 @@
   background-image: repeating-linear-gradient(
     -45deg,
     var(--color-yellow) 0 10px,
-    var(--color-cream) 10px 20px
+    var(--color-white) 10px 20px
   );
   background-size: 28.2843px 28.2843px;
   animation: var(--animate-stripes);

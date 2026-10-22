@@ -3,36 +3,51 @@ const Sparkle = ({ x, y, size, fill }: { x: number; y: number; size: number; fil
     transform={`translate(${x} ${y}) scale(${size / 20})`}
     d="M0 -20C2 -6 6 -2 20 0C6 2 2 6 0 20C-2 6 -6 2 -20 0C-6 -2 -2 -6 0 -20Z"
     class={fill}
+    stroke-width={(4 * 20) / size}
   />
 );
 
-/** A padlock waiting for its key, drawn in the Python Italia line style. */
+/** A die-cut sticker of a happy padlock. */
 export const Padlock = ({ class: className }: { class: string }) => (
   <svg
-    viewBox="0 0 340 360"
+    viewBox="0 0 340 340"
     class={className}
-    stroke="#0e1116"
-    stroke-width="4"
+    stroke="#000"
+    stroke-linecap="round"
     stroke-linejoin="round"
     aria-hidden="true"
   >
-    <Sparkle x={292} y={52} size={22} fill="fill-yellow" />
-    <Sparkle x={36} y={34} size={12} fill="fill-cream" />
-    <Sparkle x={312} y={150} size={11} fill="fill-pink" />
-    <Sparkle x={24} y={262} size={14} fill="fill-cream" />
-    <path class="fill-cream" d="M98 182V126a72 72 0 0 1 144 0v56h-34v-56a38 38 0 0 0-76 0v56Z" />
-    <rect class="fill-coral" x="56" y="170" width="228" height="164" rx="14" />
-    <path class="fill-caramel" d="M56 184a14 14 0 0 1 14-14h200a14 14 0 0 1 14 14v18H56Z" />
-    <circle class="fill-cream" cx="82" cy="226" r="7" />
-    <circle class="fill-cream" cx="258" cy="226" r="7" />
-    <circle class="fill-cream" cx="82" cy="306" r="7" />
-    <circle class="fill-cream" cx="258" cy="306" r="7" />
-    <path class="fill-black" d="M162 262h16l6 44h-28Z" />
-    <circle class="fill-black" cx="170" cy="252" r="20" />
-    <g transform="rotate(38 52 110)">
-      <circle class="fill-yellow" cx="52" cy="110" r="24" />
-      <circle class="fill-milk" cx="52" cy="110" r="8" />
-      <path class="fill-yellow" d="M76 102h66v16h-10v14h-14v-14h-8v10h-14v-10h-20Z" />
-    </g>
+    <defs>
+      <g id="padlock-outline">
+        <path d="M110 175V120a60 60 0 0 1 120 0v55Z" />
+        <rect x="60" y="160" width="220" height="150" rx="40" />
+      </g>
+    </defs>
+    <use
+      href="#padlock-outline"
+      class="fill-grey-200 stroke-grey-200"
+      stroke-width="36"
+      transform="translate(6 9)"
+    />
+    <use href="#padlock-outline" class="fill-white stroke-white" stroke-width="36" />
+    <path d="M110 175V120a60 60 0 0 1 120 0v55" fill="none" stroke-width="34" />
+    <path
+      d="M110 175V120a60 60 0 0 1 120 0v55"
+      fill="none"
+      class="stroke-white"
+      stroke-width="20"
+    />
+    <rect x="60" y="160" width="220" height="150" rx="40" class="fill-yellow" stroke-width="7" />
+    <circle cx="132" cy="226" r="10" class="fill-black" stroke="none" />
+    <circle cx="208" cy="226" r="10" class="fill-black" stroke="none" />
+    <circle cx="135" cy="222" r="3.5" class="fill-white" stroke="none" />
+    <circle cx="211" cy="222" r="3.5" class="fill-white" stroke="none" />
+    <ellipse cx="108" cy="254" rx="15" ry="9" class="fill-pink" stroke="none" />
+    <ellipse cx="232" cy="254" rx="15" ry="9" class="fill-pink" stroke="none" />
+    <path d="M156 252q14 14 28 0" fill="none" stroke-width="7" />
+    <Sparkle x={292} y={70} size={24} fill="fill-yellow" />
+    <Sparkle x={300} y={136} size={12} fill="fill-pink" />
+    <Sparkle x={34} y={110} size={18} fill="fill-yellow" />
+    <Sparkle x={52} y={60} size={10} fill="fill-pink" />
   </svg>
 );
