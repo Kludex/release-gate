@@ -120,6 +120,21 @@ export async function replaceUserRepos(
   ]);
 }
 
+/** Offers newly installed repositories to the users who installed or requested them. */
+export async function addUserRepos(
+  db: D1Database,
+  userIds: number[],
+  repos: string[],
+): Promise<void> {
+  await db
+    .prepare(
+      `INSERT OR IGNORE INTO user_repos (github_user_id, repo_full_name)
+       SELECT users.value, repos.value FROM json_each(?) AS users, json_each(?) AS repos`,
+    )
+    .bind(JSON.stringify(userIds), JSON.stringify(repos))
+    .run();
+}
+
 export type UserRepo = { repo_full_name: string; claimed: number };
 
 /** Repositories from the user's last sign-in, and whether someone has set them up. */

@@ -140,7 +140,9 @@ it("still renders a request when the tag list is unavailable", async () => {
 
 it("tells users without repositories how to join", async () => {
   const page = await (await call("/releases", { cookie: await signIn(BOB) })).text();
-  expect(page).toContain("You are not an approver for any repository");
+  expect(page).toContain("Get started");
+  expect(page).toContain('href="/invite"');
+  expect(page).toContain("How do I connect a workflow?");
 });
 
 it("lists open invites", async () => {

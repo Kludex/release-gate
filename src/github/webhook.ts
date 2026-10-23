@@ -1,7 +1,7 @@
 import { verify } from "@octokit/webhooks-methods";
 import type { Context } from "hono";
 import { audit } from "@/db/audit";
-import { getPolicy, setPolicyInstallation, upsertInstallation } from "@/db/repos";
+import { addUserRepos, getPolicy, setPolicyInstallation, upsertInstallation } from "@/db/repos";
 import { type ApprovalRequest, getRequest, insertRequest, markPending } from "@/db/requests";
 import type { AppEnv, Env } from "@/env";
 import { installationToken } from "@/github/app";
@@ -19,20 +19,33 @@ type DeploymentProtectionRule = {
   sender: { id: number; login: string };
 };
 
+type InstallationEvent = {
+  action: string;
+  repositories?: { full_name: string }[];
+  repositories_added?: { full_name: string }[];
+  requester?: { id: number } | null;
+  sender: { id: number };
+};
+
 export async function handleWebhook(c: Context<AppEnv>): Promise<Response> {
   const body = await c.req.text();
   const signature = c.req.header("X-Hub-Signature-256");
   if (!signature || !(await verify(c.env.GITHUB_WEBHOOK_SECRET, body, signature))) {
     return c.text("Invalid signature", 401);
   }
-  const deliveryId = c.req.header("X-GitHub-Delivery");
-  const payload = JSON.parse(body) as DeploymentProtectionRule;
-  if (
-    c.req.header("X-GitHub-Event") !== "deployment_protection_rule" ||
-    payload.action !== "requested"
-  ) {
-    return c.text("Ignored");
+  const payload = JSON.parse(body) as DeploymentProtectionRule & InstallationEvent;
+  const event = `${c.req.header("X-GitHub-Event")}.${payload.action}`;
+  if (event === "installation.created" || event === "installation_repositories.added") {
+    const repos = (payload.repositories ?? payload.repositories_added) as { full_name: string }[];
+    await addUserRepos(
+      c.env.DB,
+      [payload.sender.id, payload.requester?.id ?? payload.sender.id],
+      repos.map((repo) => repo.full_name),
+    );
+    return c.text("Recorded");
   }
+  if (event !== "deployment_protection_rule.requested") return c.text("Ignored");
+  const deliveryId = c.req.header("X-GitHub-Delivery");
   const repo = payload.repository.full_name;
   const runId = parseCallbackUrl(payload.deployment_callback_url, repo);
   if (runId === null || !deliveryId || !payload.installation || !payload.deployment) {

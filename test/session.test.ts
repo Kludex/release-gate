@@ -1,5 +1,5 @@
 import { expect, it, vi } from "vitest";
-import { ADMIN, BOB, call, cookie, ORIGIN, setUpAdmin, signIn } from "./helpers";
+import { ADMIN, BOB, call, cookie, ORIGIN, sendWebhook, setUpAdmin, signIn } from "./helpers";
 
 const home = async (session: string) => (await call("/releases", { cookie: session })).text();
 const admin = (full_name: string) => ({ full_name, permissions: { admin: true } });
@@ -36,9 +36,34 @@ it("refreshes the list on every sign-in", async () => {
     '<option value="acme/widgets">',
   );
   const page = await home(await signIn(BOB, null));
-  expect(page).toContain("Install the release-gate app on a repository you administer");
+  expect(page).toContain("In an organization, an owner approves the install first.");
   expect(page).toContain('href="https://github.com/apps/release-gate-test/installations/new"');
-  expect(page).toContain("not an approver for any repository yet");
+  expect(page).toContain("show up here once the app is installed");
+});
+
+it("offers repositories installed after sign-in to whoever installed or requested them", async () => {
+  const session = await signIn(BOB, null);
+  const installation = (event: string, payload: Record<string, unknown>) =>
+    sendWebhook({ sender: { id: 99 }, requester: null, ...payload }, { event });
+  await installation("installation", {
+    action: "created",
+    repositories: [{ full_name: "acme/widgets" }],
+    requester: { id: BOB.id },
+  });
+  await installation("installation_repositories", {
+    action: "added",
+    repositories_added: [{ full_name: "acme/other" }],
+    sender: { id: BOB.id },
+  });
+  await installation("installation", {
+    action: "deleted",
+    repositories: [{ full_name: "acme/gone" }],
+    sender: { id: BOB.id },
+  });
+  const page = await home(session);
+  expect(page).toContain('<option value="acme/widgets">');
+  expect(page).toContain('<option value="acme/other">');
+  expect(page).not.toContain("acme/gone");
 });
 
 it("signs in with GitHub and shows the dashboard", async () => {

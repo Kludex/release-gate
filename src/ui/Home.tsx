@@ -16,6 +16,33 @@ const STEPS = [
   ["A passkey releases it", "Touch ID or a security key. A stolen token is not enough."],
 ];
 
+const SETUP = [
+  [
+    "Install the app",
+    "On the repository that publishes releases. In an organization, an owner approves it.",
+  ],
+  ["Set it up here", "Sign in with GitHub, pick the repository and register a passkey."],
+  [
+    "Protect the environment",
+    "Run the publishing job in an environment, and enable release-gate on it.",
+  ],
+];
+
+const Steps = ({ steps }: { steps: string[][] }) => (
+  <ol class="grid gap-10 md:grid-cols-3">
+    {steps.map(([title, text], index) => (
+      <li class="space-y-2">
+        <span class="relative isolate grid size-12 place-items-center font-display text-2xl">
+          <Blob class="inset-0 size-full" />
+          {index + 1}
+        </span>
+        <h3 class="text-balance text-2xl font-bold leading-tight">{title}</h3>
+        <p class="text-lg leading-relaxed">{text}</p>
+      </li>
+    ))}
+  </ol>
+);
+
 export const Home = ({ signedIn }: { signedIn: boolean }) => (
   <>
     <div class="grid items-center gap-12 pt-10 lg:grid-cols-[1fr_20rem] lg:pt-16">
@@ -80,18 +107,10 @@ export const Home = ({ signedIn }: { signedIn: boolean }) => (
       </p>
     </Section>
     <Section title="How it works">
-      <ol class="grid gap-10 md:grid-cols-3">
-        {STEPS.map(([title, text], index) => (
-          <li class="space-y-2">
-            <span class="relative isolate grid size-12 place-items-center font-display text-2xl">
-              <Blob class="inset-0 size-full" />
-              {index + 1}
-            </span>
-            <h3 class="text-balance text-2xl font-bold leading-tight">{title}</h3>
-            <p class="text-lg leading-relaxed">{text}</p>
-          </li>
-        ))}
-      </ol>
+      <Steps steps={STEPS} />
+    </Section>
+    <Section title="Set it up">
+      <Steps steps={SETUP} />
     </Section>
   </>
 );
